@@ -1,29 +1,32 @@
 import { useState, useMemo, useEffect } from "react";
-import { Users, Package, Plus, Search, X, Pencil, Trash2, Phone, MapPin, Ruler, Boxes, Warehouse, Wallet, FileText, Truck, AlertTriangle, ChevronRight, Building2, Loader2, CheckCircle2, Menu, History, ClipboardList, ArrowRightLeft, TrendingUp, TrendingDown, CalendarClock, Check, Landmark, ArrowRight, ShoppingCart, Receipt, Minus, ScanLine, FileClock, FileCheck2, Settings2, ShieldAlert, Info, ShieldCheck, Navigation, PackageCheck, PackageX, UserRound, CalendarDays, Factory, PackageOpen, UserCog, ChevronDown, Eye, Lock } from "lucide-react";
-import { cn, moeda, formatarData, iniciais, hojeISO, formatarEndereco, totalVenda } from "./utils/format";
+import { Plus, Search, X, Boxes, ChevronRight, Menu, ChevronDown, Eye } from "lucide-react";
+import { cn, iniciais, hojeISO, formatarEndereco } from "./utils/format";
 import { buscarCep } from "./utils/cep";
-import { NAV_ITEMS, TITULOS_ABA, MOTIVOS_ENTRADA, MOTIVOS_SAIDA, FORMAS_PAGAMENTO, MODULOS_PERMISSAO, STATUS_ENTREGA } from "./data/constantes";
+import { NAV_ITEMS, TITULOS_ABA } from "./data/constantes";
 import { CLIENTES_INICIAIS, FORNECEDORES_INICIAIS, PEDIDOS_INICIAIS, PAPEIS_INICIAIS, USUARIOS_INICIAIS, PRODUTOS_INICIAIS, MOVIMENTACOES_INICIAIS, LANCAMENTOS_INICIAIS, VENDAS_INICIAIS, EMPRESA_FISCAL_INICIAL, ENTREGAS_INICIAIS } from "./data/iniciais";
-import { CategoriaBadge } from "./components/ui/CategoriaBadge";
-import { KpiCard } from "./components/ui/KpiCard";
-import { EmptyState } from "./components/ui/EmptyState";
-import { Campo } from "./components/ui/Campo";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
-import { inputClasses } from "./components/ui/inputClasses";
 import { ClienteForm } from "./modules/clientes/ClienteForm";
 import { FornecedorForm } from "./modules/fornecedores/FornecedorForm";
 import { ProdutoForm } from "./modules/produtos/ProdutoForm";
-import { TipoMovimentoChip, BarraEstoque } from "./modules/estoque/estoqueUi";
 import { MovimentacaoForm } from "./modules/estoque/MovimentacaoForm";
 import { PedidoForm } from "./modules/compras/PedidoForm";
 import { UsuarioForm } from "./modules/usuarios/UsuarioForm";
 import { PapelForm } from "./modules/usuarios/PapelForm";
-import { statusLancamento, StatusChip, TipoLancamentoChip } from "./modules/financeiro/financeiroUi";
+import { statusLancamento } from "./modules/financeiro/financeiroUi";
 import { LancamentoForm } from "./modules/financeiro/LancamentoForm";
 import { CupomModal } from "./modules/venda/CupomModal";
-import { ConfigFiscalForm } from "./modules/fiscal/ConfigFiscalForm";
 import { NotaPreviewModal } from "./modules/fiscal/NotaPreviewModal";
-import { StatusEntregaChip } from "./modules/entregas/entregasUi";
+import { InicioView } from "./modules/inicio/InicioView";
+import { ProdutosView } from "./modules/produtos/ProdutosView";
+import { ClientesView } from "./modules/clientes/ClientesView";
+import { FornecedoresView } from "./modules/fornecedores/FornecedoresView";
+import { EstoqueView } from "./modules/estoque/EstoqueView";
+import { FinanceiroView } from "./modules/financeiro/FinanceiroView";
+import { EntregasView } from "./modules/entregas/EntregasView";
+import { ComprasView } from "./modules/compras/ComprasView";
+import { VendaView } from "./modules/venda/VendaView";
+import { FiscalView } from "./modules/fiscal/FiscalView";
+import { UsuariosView } from "./modules/usuarios/UsuariosView";
 import { EntregaForm } from "./modules/entregas/EntregaForm";
 
 export default function CadastroClientesProdutos() {
@@ -556,6 +559,63 @@ export default function CadastroClientesProdutos() {
     setEntregas(entregas.map((e) => (e.id === id ? { ...e, status: "cancelada" } : e)));
   }
 
+  const barraBusca = !isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && (
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <div style={{ position: "relative" }} className="flex-1 sm:max-w-sm">
+          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder={
+              aba === "clientes" ? "Buscar por nome ou documento..." :
+                aba === "fornecedores" ? "Buscar por nome ou documento..." :
+              aba === "financeiro" ? "Buscar por descrição ou cliente/fornecedor..." :
+              aba === "entregas" ? "Buscar cliente por CPF ou CNPJ..." :
+              aba === "compras" ? "Buscar por fornecedor..." :
+              "Buscar produto..."
+            }
+            className="w-full pl-9 pr-3 py-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 bg-white transition-shadow"
+          />
+        </div>
+        {podeEditar(aba) && (aba === "estoque" ? (
+          <button
+            onClick={() => setFormMovimentacao({})}
+            className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
+          >
+            <Plus size={16} /> Nova
+          </button>
+        ) : aba === "financeiro" ? (
+          <button
+            onClick={() => setFormLancamento({})}
+            className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
+          >
+            <Plus size={16} /> Novo
+          </button>
+        ) : aba === "entregas" ? (
+          <button
+            onClick={() => setFormEntrega({})}
+            className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
+          >
+            <Plus size={16} /> Nova
+          </button>
+        ) : aba === "compras" ? (
+          <button
+            onClick={() => setFormPedido({})}
+            className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
+          >
+            <Plus size={16} /> Novo
+          </button>
+        ) : (
+          <button
+            onClick={() => (aba === "clientes" ? setFormCliente({}) : aba === "fornecedores" ? setFormFornecedor({}) : setFormProduto({}))}
+            className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
+          >
+            <Plus size={16} /> Novo
+          </button>
+        ))}
+      </div>
+  );
+
   return (
     <div className="min-h-screen bg-stone-50 flex font-sans">
       {!isDesktop && menuAberto && (
@@ -741,1604 +801,201 @@ export default function CadastroClientesProdutos() {
 
         <main className="px-4 sm:px-8 py-5 sm:py-6 max-w-6xl">
           {aba === "inicio" && (
-            <div className="space-y-6">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem" }}>
-                <KpiCard label="Clientes cadastrados" valor={clientes.length} icon={Users} tom="bg-teal-50 text-teal-700" />
-                <KpiCard label="Produtos cadastrados" valor={produtos.length} icon={Package} tom="bg-teal-50 text-teal-700" />
-                <KpiCard label="Itens com estoque baixo" valor={produtosEstoqueBaixo} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-                <KpiCard label="Valor total em estoque" valor={moeda(valorEmEstoque)} icon={Boxes} tom="bg-amber-50 text-amber-700" />
-                <KpiCard
-                  label="Saldo do mês"
-                  valor={moeda(saldoMes)}
-                  icon={Landmark}
-                  tom={saldoMes >= 0 ? "bg-teal-50 text-teal-700" : "bg-red-50 text-red-600"}
-                />
-                <KpiCard label="A receber" valor={moeda(aReceber)} icon={TrendingUp} tom="bg-emerald-50 text-emerald-700" />
-                <KpiCard label="A pagar" valor={moeda(aPagar)} icon={TrendingDown} tom="bg-amber-50 text-amber-700" />
-                <KpiCard label="Lançamentos vencidos" valor={vencidos} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Ações rápidas</p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.75rem" }}>
-                  {[
-                    { label: "Nova venda", icon: ScanLine, onClick: () => setAba("venda") },
-                    { label: "Novo cliente", icon: Users, onClick: () => { setAba("clientes"); setFormCliente({}); } },
-                    { label: "Novo fornecedor", icon: Factory, onClick: () => { setAba("fornecedores"); setFormFornecedor({}); } },
-                    { label: "Novo pedido", icon: PackageOpen, onClick: () => { setAba("compras"); setFormPedido({}); } },
-                    { label: "Novo produto", icon: Package, onClick: () => { setAba("produtos"); setFormProduto({}); } },
-                    { label: "Movimentar estoque", icon: ArrowRightLeft, onClick: () => { setAba("estoque"); setFormMovimentacao({}); } },
-                    { label: "Novo lançamento", icon: Wallet, onClick: () => { setAba("financeiro"); setFormLancamento({}); } },
-                  ].map((a) => (
-                    <button
-                      key={a.label}
-                      onClick={a.onClick}
-                      className="bg-white border border-stone-200 rounded-xl px-4 py-4 flex flex-col items-center gap-2 text-center hover:border-teal-700/40 hover:bg-teal-50/30 transition-colors"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center">
-                        <a.icon size={17} />
-                      </div>
-                      <span className="text-xs font-medium text-stone-700">{a.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-                    <p className="font-semibold text-stone-800 text-sm">Contas a vencer</p>
-                    <button
-                      onClick={() => setAba("financeiro")}
-                      className="text-xs text-teal-800 font-medium flex items-center gap-1 hover:underline"
-                    >
-                      Ver tudo <ArrowRight size={12} />
-                    </button>
-                  </div>
-                  {lancamentos.filter((l) => !l.pago).length === 0 ? (
-                    <p className="text-sm text-stone-400 px-5 py-6 text-center">Nenhuma conta pendente.</p>
-                  ) : (
-                    <div className="divide-y divide-stone-100">
-                      {[...lancamentos]
-                        .filter((l) => !l.pago)
-                        .sort((a, b) => (a.vencimento > b.vencimento ? 1 : -1))
-                        .slice(0, 5)
-                        .map((l) => {
-                          const status = statusLancamento(l);
-                          return (
-                            <div key={l.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-stone-800 truncate">{l.descricao}</p>
-                                <p className="text-xs text-stone-400">{formatarData(l.vencimento)}</p>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className={cn("text-sm font-medium tabular-nums", l.tipo === "receita" ? "text-emerald-700" : "text-stone-700")}>
-                                  {moeda(l.valor)}
-                                </span>
-                                <StatusChip status={status} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-                    <p className="font-semibold text-stone-800 text-sm">Estoque baixo</p>
-                    <button
-                      onClick={() => { setAba("estoque"); setSubEstoque("posicao"); }}
-                      className="text-xs text-teal-800 font-medium flex items-center gap-1 hover:underline"
-                    >
-                      Ver tudo <ArrowRight size={12} />
-                    </button>
-                  </div>
-                  {produtos.filter((p) => p.estoque <= p.estoqueMin).length === 0 ? (
-                    <p className="text-sm text-stone-400 px-5 py-6 text-center">Nenhum item abaixo do mínimo.</p>
-                  ) : (
-                    <div className="divide-y divide-stone-100">
-                      {produtos.filter((p) => p.estoque <= p.estoqueMin).slice(0, 5).map((p) => (
-                        <div key={p.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-stone-800 truncate">{p.nome}</p>
-                            <div className="mt-1"><CategoriaBadge categoriaId={p.categoria} /></div>
-                          </div>
-                          <span className="text-sm font-medium text-red-600 tabular-nums shrink-0">
-                            {p.estoque} {p.unidade}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <InicioView
+              aPagar={aPagar}
+              aReceber={aReceber}
+              clientes={clientes}
+              lancamentos={lancamentos}
+              produtos={produtos}
+              produtosEstoqueBaixo={produtosEstoqueBaixo}
+              saldoMes={saldoMes}
+              setAba={setAba}
+              setFormCliente={setFormCliente}
+              setFormFornecedor={setFormFornecedor}
+              setFormLancamento={setFormLancamento}
+              setFormMovimentacao={setFormMovimentacao}
+              setFormPedido={setFormPedido}
+              setFormProduto={setFormProduto}
+              setSubEstoque={setSubEstoque}
+              valorEmEstoque={valorEmEstoque}
+              vencidos={vencidos}
+            />
           )}
-
           {aba === "produtos" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Produtos cadastrados" valor={produtos.length} icon={Package} tom="bg-teal-50 text-teal-700" />
-              <KpiCard label="Estoque baixo" valor={produtosEstoqueBaixo} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-              <KpiCard label="Valor total em estoque" valor={moeda(valorEmEstoque)} icon={Wallet} tom="bg-amber-50 text-amber-700" />
-            </div>
+            <ProdutosView
+              barraBusca={barraBusca}
+              fornecedoresPorId={fornecedoresPorId}
+              produtos={produtos}
+              produtosEstoqueBaixo={produtosEstoqueBaixo}
+              produtosFiltrados={produtosFiltrados}
+              setConfirmacao={setConfirmacao}
+              setFormProduto={setFormProduto}
+              valorEmEstoque={valorEmEstoque}
+              barraBusca={barraBusca}
+            />
           )}
           {aba === "clientes" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Clientes cadastrados" valor={clientes.length} icon={Users} tom="bg-teal-50 text-teal-700" />
-              <KpiCard label="Pessoas jurídicas" valor={clientes.filter((c) => c.tipo === "PJ").length} icon={Building2} tom="bg-slate-50 text-slate-700" />
-              <KpiCard label="Pessoas físicas" valor={clientes.filter((c) => c.tipo === "PF").length} icon={Users} tom="bg-amber-50 text-amber-700" />
-            </div>
+            <ClientesView
+              barraBusca={barraBusca}
+              clientes={clientes}
+              clientesFiltrados={clientesFiltrados}
+              setConfirmacao={setConfirmacao}
+              setFormCliente={setFormCliente}
+              barraBusca={barraBusca}
+            />
           )}
           {aba === "fornecedores" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Fornecedores cadastrados" valor={fornecedores.length} icon={Factory} tom="bg-teal-50 text-teal-700" />
-              <KpiCard label="Pessoas jurídicas" valor={fornecedores.filter((f) => f.tipo === "PJ").length} icon={Building2} tom="bg-slate-50 text-slate-700" />
-              <KpiCard label="Pessoas físicas" valor={fornecedores.filter((f) => f.tipo === "PF").length} icon={Users} tom="bg-amber-50 text-amber-700" />
-            </div>
+            <FornecedoresView
+              barraBusca={barraBusca}
+              fornecedores={fornecedores}
+              fornecedoresFiltrados={fornecedoresFiltrados}
+              setConfirmacao={setConfirmacao}
+              setFormFornecedor={setFormFornecedor}
+              barraBusca={barraBusca}
+            />
           )}
           {aba === "estoque" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Itens com estoque baixo" valor={produtosEstoqueBaixo} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-              <KpiCard label="Valor total em estoque" valor={moeda(valorEmEstoque)} icon={Wallet} tom="bg-amber-50 text-amber-700" />
-              <KpiCard label="Movimentações hoje" valor={movimentacoesHoje} icon={ArrowRightLeft} tom="bg-teal-50 text-teal-700" />
-            </div>
+            <EstoqueView
+              barraBusca={barraBusca}
+              movimentacoesFiltradas={movimentacoesFiltradas}
+              movimentacoesHoje={movimentacoesHoje}
+              produtosEstoqueBaixo={produtosEstoqueBaixo}
+              produtosFiltrados={produtosFiltrados}
+              produtosPorId={produtosPorId}
+              setFormMovimentacao={setFormMovimentacao}
+              setSubEstoque={setSubEstoque}
+              subEstoque={subEstoque}
+              valorEmEstoque={valorEmEstoque}
+              barraBusca={barraBusca}
+            />
           )}
-
-          {aba === "estoque" && (
-            <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-xs mb-4">
-              {[
-                { id: "posicao", label: "Posição atual", icon: ClipboardList },
-                { id: "historico", label: "Histórico", icon: History },
-              ].map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSubEstoque(s.id)}
-                  className={cn(
-                    "flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5",
-                    subEstoque === s.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                  )}
-                >
-                  <s.icon size={14} /> {s.label}
-                </button>
-              ))}
-            </div>
-          )}
-
           {aba === "financeiro" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard
-                label="Saldo do mês"
-                valor={moeda(saldoMes)}
-                icon={Landmark}
-                tom={saldoMes >= 0 ? "bg-teal-50 text-teal-700" : "bg-red-50 text-red-600"}
-              />
-              <KpiCard label="A receber" valor={moeda(aReceber)} icon={TrendingUp} tom="bg-emerald-50 text-emerald-700" />
-              <KpiCard label="A pagar" valor={moeda(aPagar)} icon={TrendingDown} tom="bg-amber-50 text-amber-700" />
-              <KpiCard label="Lançamentos vencidos" valor={vencidos} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-            </div>
+            <FinanceiroView
+              aPagar={aPagar}
+              aReceber={aReceber}
+              alternarPago={alternarPago}
+              barraBusca={barraBusca}
+              clientesPorId={clientesPorId}
+              filtroFinanceiro={filtroFinanceiro}
+              lancamentosFiltrados={lancamentosFiltrados}
+              saldoMes={saldoMes}
+              setConfirmacao={setConfirmacao}
+              setFiltroFinanceiro={setFiltroFinanceiro}
+              setFormLancamento={setFormLancamento}
+              vencidos={vencidos}
+              barraBusca={barraBusca}
+            />
           )}
-
-          {aba === "financeiro" && (
-            <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-md mb-4">
-              {[
-                { id: "todos", label: "Todos" },
-                { id: "receber", label: "A receber" },
-                { id: "pagar", label: "A pagar" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFiltroFinanceiro(f.id)}
-                  className={cn(
-                    "flex-1 py-2 rounded-md text-sm font-medium transition-colors",
-                    filtroFinanceiro === f.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-
           {aba === "entregas" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Pendentes" valor={entregasPendentes} icon={FileClock} tom="bg-amber-50 text-amber-700" />
-              <KpiCard label="Em rota" valor={entregasEmRota} icon={Navigation} tom="bg-sky-50 text-sky-700" />
-              <KpiCard label="Atrasadas" valor={entregasAtrasadas} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-              <KpiCard label="Entregues hoje" valor={entregasHoje} icon={PackageCheck} tom="bg-emerald-50 text-emerald-700" />
-            </div>
+            <EntregasView
+              avancarStatusEntrega={avancarStatusEntrega}
+              barraBusca={barraBusca}
+              cancelarEntrega={cancelarEntrega}
+              clientesPorId={clientesPorId}
+              entregasAtrasadas={entregasAtrasadas}
+              entregasEmRota={entregasEmRota}
+              entregasFiltradas={entregasFiltradas}
+              entregasHoje={entregasHoje}
+              entregasPendentes={entregasPendentes}
+              filtroEntrega={filtroEntrega}
+              setFiltroEntrega={setFiltroEntrega}
+              setFormEntrega={setFormEntrega}
+              barraBusca={barraBusca}
+            />
           )}
-
-          {aba === "entregas" && (
-            <div className="flex gap-2 p-1 bg-stone-100 rounded-lg overflow-x-auto mb-4">
-              {[{ id: "todas", label: "Todas" }, ...STATUS_ENTREGA].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFiltroEntrega(f.id)}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                    filtroEntrega === f.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-
           {aba === "compras" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <KpiCard label="Pedidos pendentes" valor={pedidosPendentesCount} icon={PackageOpen} tom="bg-amber-50 text-amber-700" />
-              <KpiCard label="Valor pendente" valor={moeda(valorPedidosPendentes)} icon={Wallet} tom="bg-teal-50 text-teal-700" />
-              <KpiCard label="Atrasados" valor={pedidosAtrasados} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
-            </div>
+            <ComprasView
+              barraBusca={barraBusca}
+              filtroPedido={filtroPedido}
+              fornecedoresPorId={fornecedoresPorId}
+              pedidosAtrasados={pedidosAtrasados}
+              pedidosFiltrados={pedidosFiltrados}
+              pedidosPendentesCount={pedidosPendentesCount}
+              registrarRecebimento={registrarRecebimento}
+              setConfirmacao={setConfirmacao}
+              setFiltroPedido={setFiltroPedido}
+              setFormPedido={setFormPedido}
+              totalPedido={totalPedido}
+              valorPedidosPendentes={valorPedidosPendentes}
+              barraBusca={barraBusca}
+            />
           )}
-
-          {aba === "compras" && (
-            <div className="flex gap-2 p-1 bg-stone-100 rounded-lg overflow-x-auto mb-4">
-              {[
-                { id: "todos", label: "Todos" },
-                { id: "pendente", label: "Pendentes" },
-                { id: "recebido", label: "Recebidos" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFiltroPedido(f.id)}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                    filtroPedido === f.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+          {aba === "venda" && (
+            <VendaView
+              adicionarAoCarrinho={adicionarAoCarrinho}
+              alterarQtdCarrinho={alterarQtdCarrinho}
+              bipCodigo={bipCodigo}
+              bipQuantidade={bipQuantidade}
+              carrinho={carrinho}
+              cepVenda={cepVenda}
+              clienteVendaEncontrado={clienteVendaEncontrado}
+              clienteVendaNaoEncontrado={clienteVendaNaoEncontrado}
+              dataEntregaVenda={dataEntregaVenda}
+              descontoTipo={descontoTipo}
+              descontoValor={descontoValor}
+              digitosDocVenda={digitosDocVenda}
+              docClienteVenda={docClienteVenda}
+              enderecoEntregaVenda={enderecoEntregaVenda}
+              erroBip={erroBip}
+              etapaVenda={etapaVenda}
+              finalizarVenda={finalizarVenda}
+              formaPagamentoVenda={formaPagamentoVenda}
+              gerarNotaVenda={gerarNotaVenda}
+              numeroVenda={numeroVenda}
+              onCepVendaChange={onCepVendaChange}
+              onNumeroVendaChange={onNumeroVendaChange}
+              produtos={produtos}
+              produtosPorId={produtosPorId}
+              removerDoCarrinho={removerDoCarrinho}
+              setBipCodigo={setBipCodigo}
+              setBipQuantidade={setBipQuantidade}
+              setDataEntregaVenda={setDataEntregaVenda}
+              setDescontoTipo={setDescontoTipo}
+              setDescontoValor={setDescontoValor}
+              setDocClienteVenda={setDocClienteVenda}
+              setEnderecoEntregaVenda={setEnderecoEntregaVenda}
+              setErroBip={setErroBip}
+              setEtapaVenda={setEtapaVenda}
+              setFormCliente={setFormCliente}
+              setFormaPagamentoVenda={setFormaPagamentoVenda}
+              setGerarNotaVenda={setGerarNotaVenda}
+              setTipoEntregaVenda={setTipoEntregaVenda}
+              statusCepVenda={statusCepVenda}
+              subtotalCarrinho={subtotalCarrinho}
+              tipoEntregaVenda={tipoEntregaVenda}
+              totalComDesconto={totalComDesconto}
+              valorDesconto={valorDesconto}
+            />
           )}
-
-          {!isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-              <div style={{ position: "relative" }} className="flex-1 sm:max-w-sm">
-                <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
-                <input
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder={
-                    aba === "clientes" ? "Buscar por nome ou documento..." :
-                      aba === "fornecedores" ? "Buscar por nome ou documento..." :
-                    aba === "financeiro" ? "Buscar por descrição ou cliente/fornecedor..." :
-                    aba === "entregas" ? "Buscar cliente por CPF ou CNPJ..." :
-                    aba === "compras" ? "Buscar por fornecedor..." :
-                    "Buscar produto..."
-                  }
-                  className="w-full pl-9 pr-3 py-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 bg-white transition-shadow"
-                />
-              </div>
-              {podeEditar(aba) && (aba === "estoque" ? (
-                <button
-                  onClick={() => setFormMovimentacao({})}
-                  className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Nova
-                </button>
-              ) : aba === "financeiro" ? (
-                <button
-                  onClick={() => setFormLancamento({})}
-                  className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Novo
-                </button>
-              ) : aba === "entregas" ? (
-                <button
-                  onClick={() => setFormEntrega({})}
-                  className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Nova
-                </button>
-              ) : aba === "compras" ? (
-                <button
-                  onClick={() => setFormPedido({})}
-                  className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Novo
-                </button>
-              ) : (
-                <button
-                  onClick={() => (aba === "clientes" ? setFormCliente({}) : aba === "fornecedores" ? setFormFornecedor({}) : setFormProduto({}))}
-                  className="flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Novo
-                </button>
-              ))}
-            </div>
-          )}
-
-          {aba === "venda" && etapaVenda === "inicio" && (
-            <div className="max-w-md mx-auto bg-white rounded-xl border border-stone-200 p-10 text-center">
-              <div className="w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mx-auto mb-4">
-                <ScanLine size={24} className="text-teal-700" />
-              </div>
-              <h2 className="text-lg font-semibold text-stone-900 mb-1.5">Nova venda</h2>
-              <p className="text-sm text-stone-500 mb-6">Identifique o cliente para começar a venda.</p>
-              <button
-                onClick={() => setEtapaVenda("cliente")}
-                className="w-full flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-              >
-                <Plus size={16} /> Iniciar venda
-              </button>
-            </div>
-          )}
-
-          {aba === "venda" && etapaVenda === "cliente" && (
-            <div className="max-w-md mx-auto bg-white rounded-xl border border-stone-200 p-6 space-y-4">
-              <p className="text-xs font-semibold text-teal-800">Cliente</p>
-              <Campo label="CPF ou CNPJ">
-                <div style={{ position: "relative" }}>
-                  <Search size={14} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
-                  <input
-                    autoFocus
-                    value={docClienteVenda}
-                    onChange={(e) => setDocClienteVenda(e.target.value)}
-                    className={cn(inputClasses, "pl-8")}
-                    placeholder="Digite o CPF ou CNPJ"
-                    inputMode="numeric"
-                    onKeyDown={(e) => { if (e.key === "Enter" && clienteVendaEncontrado) setEtapaVenda("produtos"); }}
-                  />
-                </div>
-
-                {clienteVendaEncontrado ? (
-                  <div className="flex items-center justify-between gap-2 mt-2 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-                    <div className="min-w-0 flex items-center gap-1.5">
-                      <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                      <span className="text-sm text-emerald-800 truncate">{clienteVendaEncontrado.nome}</span>
-                    </div>
-                    <button
-                      onClick={() => setDocClienteVenda("")}
-                      className="text-emerald-700 hover:text-emerald-900 shrink-0"
-                      aria-label="Remover cliente"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : clienteVendaNaoEncontrado ? (
-                  <div className="mt-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
-                    <p className="text-sm text-amber-800 mb-2">Cliente não encontrado.</p>
-                    <button
-                      onClick={() => setFormCliente({
-                        tipo: digitosDocVenda.length === 14 ? "PJ" : "PF",
-                        documento: docClienteVenda,
-                      })}
-                      className="w-full flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    >
-                      <Plus size={14} /> Cadastrar cliente agora
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-xs text-stone-400 mt-1.5">Deixe em branco para consumidor não identificado.</p>
-                )}
-              </Campo>
-
-              <div className="pt-2">
-                {clienteVendaEncontrado ? (
-                  <button
-                    onClick={() => setEtapaVenda("produtos")}
-                    className="w-full flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                  >
-                    Continuar
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => { setDocClienteVenda(""); setEtapaVenda("produtos"); }}
-                    className="w-full text-sm text-stone-500 hover:text-stone-700 py-2"
-                  >
-                    Continuar sem identificar cliente
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {aba === "venda" && etapaVenda === "produtos" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
-                  <p className="text-xs font-semibold text-teal-800 mb-3">1. Produtos <span className="text-stone-400 font-normal normal-case">— bipe ou digite o código, o estoque é validado automaticamente</span></p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div style={{ position: "relative" }} className="flex-1">
-                      <ScanLine size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
-                      <input
-                        value={bipCodigo}
-                        onChange={(e) => { setBipCodigo(e.target.value); setErroBip(""); }}
-                        onKeyDown={(e) => { if (e.key === "Enter") adicionarAoCarrinho(); }}
-                        placeholder="Bipe ou digite o código de barras"
-                        className="w-full pl-9 pr-3 py-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition-shadow"
-                      />
-                    </div>
-                    <div className="flex gap-3">
-                      <input
-                        value={bipQuantidade}
-                        onChange={(e) => setBipQuantidade(e.target.value.replace(/\D/g, ""))}
-                        onKeyDown={(e) => { if (e.key === "Enter") adicionarAoCarrinho(); }}
-                        placeholder="Qtd"
-                        inputMode="numeric"
-                        style={{ width: "4.5rem" }}
-                        className="shrink-0 px-3 py-2.5 border border-stone-300 rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition-shadow"
-                      />
-                      <button
-                        onClick={adicionarAoCarrinho}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
-                      >
-                        <Plus size={16} /> Adicionar
-                      </button>
-                    </div>
-                  </div>
-                  {erroBip && (
-                    <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-3">{erroBip}</p>
-                  )}
-                  <p className="text-xs text-stone-400 mt-3">
-                    Códigos de exemplo: {produtos.slice(0, 3).map((p) => p.codigoBarras).join(" · ")}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  {carrinho.length === 0 ? (
-                    <EmptyState icon={ShoppingCart} title="Carrinho vazio" subtitle="Bipe o código de um produto para começar a venda." />
-                  ) : (
-                    <div className="divide-y divide-stone-100">
-                      {carrinho.map((item) => {
-                        const produto = produtosPorId[item.produtoId];
-                        if (!produto) return null;
-                        return (
-                          <div key={item.produtoId} className="flex items-center gap-3 p-4">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-stone-800 truncate">{produto.nome}</p>
-                              <p className="text-xs text-stone-400">{moeda(produto.preco)} / {produto.unidade}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button
-                                onClick={() => alterarQtdCarrinho(item.produtoId, item.quantidade - 1)}
-                                className="w-7 h-7 rounded-md border border-stone-200 flex items-center justify-center text-stone-500 hover:bg-stone-50"
-                                aria-label="Diminuir"
-                              >
-                                <Minus size={13} />
-                              </button>
-                              <span className="w-8 text-center text-sm font-medium tabular-nums">{item.quantidade}</span>
-                              <button
-                                onClick={() => alterarQtdCarrinho(item.produtoId, item.quantidade + 1)}
-                                className="w-7 h-7 rounded-md border border-stone-200 flex items-center justify-center text-stone-500 hover:bg-stone-50 disabled:opacity-30"
-                                disabled={item.quantidade >= produto.estoque}
-                                aria-label="Aumentar"
-                              >
-                                <Plus size={13} />
-                              </button>
-                            </div>
-                            <span className="w-24 text-right font-medium text-stone-800 tabular-nums shrink-0">
-                              {moeda(item.quantidade * produto.preco)}
-                            </span>
-                            <button
-                              onClick={() => removerDoCarrinho(item.produtoId)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:text-red-600 shrink-0"
-                              aria-label="Remover"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-5 lg:sticky lg:top-6">
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Resumo da venda</p>
-
-                <div>
-                  <p className="text-xs font-semibold text-teal-800 mb-2">2. Cliente</p>
-                  <div className="flex items-center justify-between gap-2 bg-stone-50 border border-stone-100 rounded-lg px-3 py-2.5">
-                    <div className="min-w-0 flex items-center gap-1.5">
-                      {clienteVendaEncontrado ? (
-                        <>
-                          <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                          <span className="text-sm text-stone-800 truncate">{clienteVendaEncontrado.nome}</span>
-                        </>
-                      ) : (
-                        <span className="text-sm text-stone-500">Consumidor não identificado</span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setEtapaVenda("cliente")}
-                      className="text-xs font-medium text-teal-700 hover:text-teal-900 shrink-0"
-                    >
-                      Trocar
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-stone-100">
-                  <p className="text-xs font-semibold text-teal-800 mb-2">3. Desconto</p>
-                  <div className="flex gap-2">
-                    <div className="flex gap-1 p-1 bg-stone-100 rounded-lg shrink-0">
-                      {[{ id: "percentual", label: "%" }, { id: "valor", label: "R$" }].map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => setDescontoTipo(t.id)}
-                          className={cn(
-                            "w-10 py-1.5 rounded-md text-xs font-medium transition-colors",
-                            descontoTipo === t.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                          )}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={descontoValor}
-                      onChange={(e) => setDescontoValor(e.target.value)}
-                      placeholder="0"
-                      className={inputClasses}
-                    />
-                  </div>
-                  {valorDesconto > 0 && (
-                    <p className="text-xs text-emerald-700 mt-1.5">Desconto de {moeda(valorDesconto)} aplicado</p>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-stone-100">
-                  <p className="text-xs font-semibold text-teal-800 mb-2">4. Entrega ou retirada</p>
-                  <div className="flex gap-2 p-1 bg-stone-100 rounded-lg mb-3">
-                    <button
-                      onClick={() => setTipoEntregaVenda("retirada")}
-                      className={cn(
-                        "flex-1 py-2 rounded-md text-sm font-medium transition-colors",
-                        tipoEntregaVenda === "retirada" ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                      )}
-                    >
-                      Retirada no balcão
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTipoEntregaVenda("entrega");
-                        if (!enderecoEntregaVenda && clienteVendaEncontrado) {
-                          setEnderecoEntregaVenda(formatarEndereco(clienteVendaEncontrado.endereco));
-                        }
-                      }}
-                      className={cn(
-                        "flex-1 py-2 rounded-md text-sm font-medium transition-colors",
-                        tipoEntregaVenda === "entrega" ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                      )}
-                    >
-                      Entrega
-                    </button>
-                  </div>
-                  {tipoEntregaVenda === "entrega" && (
-                    <div className="space-y-3">
-                      <Campo label="Buscar endereço por CEP (opcional)">
-                        <div className="flex gap-2">
-                          <div style={{ position: "relative" }} className="flex-1">
-                            <input
-                              value={cepVenda}
-                              onChange={(e) => onCepVendaChange(e.target.value)}
-                              className={inputClasses}
-                              placeholder="00000-000"
-                              inputMode="numeric"
-                            />
-                            <div style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)" }}>
-                              {statusCepVenda === "buscando" && <Loader2 size={14} className="text-stone-400 animate-spin" />}
-                              {statusCepVenda === "encontrado" && <CheckCircle2 size={14} className="text-emerald-600" />}
-                            </div>
-                          </div>
-                          <input
-                            value={numeroVenda}
-                            onChange={(e) => onNumeroVendaChange(e.target.value)}
-                            className={inputClasses}
-                            placeholder="Número"
-                            style={{ width: "100px" }}
-                          />
-                        </div>
-                        {statusCepVenda === "nao_encontrado" && (
-                          <p className="text-xs text-red-600 mt-1.5">CEP não encontrado. Preencha abaixo manualmente.</p>
-                        )}
-                      </Campo>
-                      <Campo label="Endereço de entrega">
-                        <input
-                          value={enderecoEntregaVenda}
-                          onChange={(e) => setEnderecoEntregaVenda(e.target.value)}
-                          className={inputClasses}
-                          placeholder="Rua, número - Bairro, Cidade/UF"
-                        />
-                      </Campo>
-                      <Campo label="Data prevista">
-                        <input
-                          type="date"
-                          value={dataEntregaVenda}
-                          onChange={(e) => setDataEntregaVenda(e.target.value)}
-                          className={inputClasses}
-                        />
-                      </Campo>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-stone-100">
-                  <p className="text-xs font-semibold text-teal-800 mb-2">5. Pagamento</p>
-                  <Campo label="Forma de pagamento">
-                    <select
-                      value={formaPagamentoVenda}
-                      onChange={(e) => setFormaPagamentoVenda(e.target.value)}
-                      className={cn(inputClasses, "bg-white")}
-                    >
-                      {FORMAS_PAGAMENTO.map((f) => (
-                        <option key={f.id} value={f.id}>{f.label}</option>
-                      ))}
-                    </select>
-                  </Campo>
-                </div>
-
-                <div className="pt-4 border-t border-stone-100">
-                  <p className="text-xs font-semibold text-teal-800 mb-2">6. Documento fiscal</p>
-                  <label className="flex items-center gap-2.5 text-sm text-stone-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={gerarNotaVenda}
-                      onChange={(e) => setGerarNotaVenda(e.target.checked)}
-                      className="w-4 h-4 rounded border-stone-300 text-teal-800 focus:ring-teal-700/30"
-                    />
-                    Gerar rascunho de NF-e ao finalizar
-                  </label>
-                  <p className="text-xs text-stone-400 mt-1">Sem validade fiscal — fica disponível em Fiscal → Rascunhos.</p>
-                </div>
-
-                <div className="pt-4 border-t border-stone-200 space-y-1.5">
-                  <div className="flex items-center justify-between text-sm text-stone-500">
-                    <span>Itens</span>
-                    <span className="tabular-nums">{carrinho.reduce((s, i) => s + i.quantidade, 0)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-stone-500">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums">{moeda(subtotalCarrinho)}</span>
-                  </div>
-                  {valorDesconto > 0 && (
-                    <div className="flex items-center justify-between text-sm text-emerald-700">
-                      <span>Desconto</span>
-                      <span className="tabular-nums">− {moeda(valorDesconto)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-sm font-semibold text-stone-900">Total</span>
-                    <span className="text-xl font-bold text-teal-800 tabular-nums">{moeda(totalComDesconto)}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={finalizarVenda}
-                  disabled={carrinho.length === 0 || (tipoEntregaVenda === "entrega" && !enderecoEntregaVenda.trim())}
-                  className="w-full flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                >
-                  <Receipt size={16} /> Finalizar venda
-                </button>
-              </div>
-            </div>
-          )}
-
-          {aba === "clientes" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {clientesFiltrados.length === 0 ? (
-                <EmptyState
-                  icon={Users}
-                  title="Nenhum cliente encontrado"
-                  subtitle="Cadastre o primeiro cliente para começar a usar o sistema."
-                  acao="Novo"
-                  onAcao={() => setFormCliente({})}
-                />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Cliente</th>
-                        <th className="text-left px-5 py-3 font-medium">Documento</th>
-                        <th className="text-left px-5 py-3 font-medium">Contato</th>
-                        <th className="text-left px-5 py-3 font-medium">Endereço</th>
-                        <th className="px-5 py-3 w-20"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {clientesFiltrados.map((c) => (
-                        <tr key={c.id} className="group hover:bg-stone-50/70 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
-                                {iniciais(c.nome)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-stone-800 truncate">{c.nome}</p>
-                                <p className="text-xs text-stone-400">{c.tipo === "PF" ? "Pessoa física" : "Pessoa jurídica"}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">{c.documento}</td>
-                          <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5"><Phone size={13} className="text-stone-400" />{c.telefone}</span>
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-600">
-                            <span className="inline-flex items-center gap-1.5"><MapPin size={13} className="text-stone-400 shrink-0" />{formatarEndereco(c.endereco)}</span>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setFormCliente(c)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
-                                <Pencil size={14} />
-                              </button>
-                              <button onClick={() => setConfirmacao({ tipo: "cliente", id: c.id, nome: c.nome })} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-red-600 hover:border hover:border-stone-200">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {clientesFiltrados.map((c) => (
-                      <div key={c.id} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
-                            {iniciais(c.nome)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-stone-800 truncate">{c.nome}</p>
-                            <p className="text-xs text-stone-400 mb-2">{c.tipo === "PF" ? "Pessoa física" : "Pessoa jurídica"} · {c.documento}</p>
-                            <p className="text-xs text-stone-600 flex items-center gap-1.5 mb-1">
-                              <Phone size={12} className="text-stone-400 shrink-0" />{c.telefone}
-                            </p>
-                            <p className="text-xs text-stone-600 flex items-start gap-1.5">
-                              <MapPin size={12} className="text-stone-400 shrink-0 mt-0.5" />{formatarEndereco(c.endereco)}
-                            </p>
-                          </div>
-                          <div className="flex flex-col gap-1 shrink-0">
-                            <button onClick={() => setFormCliente(c)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Pencil size={14} />
-                            </button>
-                            <button onClick={() => setConfirmacao({ tipo: "cliente", id: c.id, nome: c.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {aba === "fornecedores" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {fornecedoresFiltrados.length === 0 ? (
-                <EmptyState
-                  icon={Factory}
-                  title="Nenhum fornecedor encontrado"
-                  subtitle="Cadastre o primeiro fornecedor para começar a usar o sistema."
-                  acao="Novo"
-                  onAcao={() => setFormFornecedor({})}
-                />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Fornecedor</th>
-                        <th className="text-left px-5 py-3 font-medium">Documento</th>
-                        <th className="text-left px-5 py-3 font-medium">Fornece</th>
-                        <th className="text-left px-5 py-3 font-medium">Contato</th>
-                        <th className="text-left px-5 py-3 font-medium">Pagamento</th>
-                        <th className="px-5 py-3 w-20"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {fornecedoresFiltrados.map((f) => (
-                        <tr key={f.id} className="group hover:bg-stone-50/70 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
-                                {iniciais(f.nome)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-stone-800 truncate">{f.nome}</p>
-                                <p className="text-xs text-stone-400">{f.tipo === "PF" ? "Pessoa física" : "Pessoa jurídica"}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">{f.documento}</td>
-                          <td className="px-5 py-3.5"><CategoriaBadge categoriaId={f.categoria} /></td>
-                          <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5"><Phone size={13} className="text-stone-400" />{f.telefone}</span>
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-500">{f.condicaoPagamento || "—"}</td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setFormFornecedor(f)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
-                                <Pencil size={14} />
-                              </button>
-                              <button onClick={() => setConfirmacao({ tipo: "fornecedor", id: f.id, nome: f.nome })} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-red-600 hover:border hover:border-stone-200">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {fornecedoresFiltrados.map((f) => (
-                      <div key={f.id} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
-                            {iniciais(f.nome)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-stone-800 truncate">{f.nome}</p>
-                            <p className="text-xs text-stone-400 mb-2">{f.tipo === "PF" ? "Pessoa física" : "Pessoa jurídica"} · {f.documento}</p>
-                            <div className="mb-2"><CategoriaBadge categoriaId={f.categoria} /></div>
-                            <p className="text-xs text-stone-600 flex items-center gap-1.5 mb-1">
-                              <Phone size={12} className="text-stone-400 shrink-0" />{f.telefone}
-                            </p>
-                            {f.condicaoPagamento && (
-                              <p className="text-xs text-stone-400">Pagamento: {f.condicaoPagamento}</p>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-1 shrink-0">
-                            <button onClick={() => setFormFornecedor(f)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Pencil size={14} />
-                            </button>
-                            <button onClick={() => setConfirmacao({ tipo: "fornecedor", id: f.id, nome: f.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {aba === "produtos" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {produtosFiltrados.length === 0 ? (
-                <EmptyState
-                  icon={Package}
-                  title="Nenhum produto encontrado"
-                  subtitle="Cadastre o primeiro produto para começar a controlar o estoque."
-                  acao="Novo"
-                  onAcao={() => setFormProduto({})}
-                />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Produto</th>
-                        <th className="text-left px-5 py-3 font-medium">Categoria</th>
-                        <th className="text-left px-5 py-3 font-medium">Fornecedor</th>
-                        <th className="text-left px-5 py-3 font-medium">Unidade</th>
-                        <th className="text-left px-5 py-3 font-medium">Preço</th>
-                        <th className="text-left px-5 py-3 font-medium">Estoque</th>
-                        <th className="px-5 py-3 w-20"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {produtosFiltrados.map((p) => (
-                        <tr key={p.id} className="group hover:bg-stone-50/70 transition-colors">
-                          <td className="px-5 py-3.5 font-medium text-stone-800">{p.nome}</td>
-                          <td className="px-5 py-3.5"><CategoriaBadge categoriaId={p.categoria} /></td>
-                          <td className="px-5 py-3.5 text-stone-500">
-                            {p.fornecedorId && fornecedoresPorId[p.fornecedorId] ? fornecedoresPorId[p.fornecedorId].nome : "—"}
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-600">
-                            <span className="inline-flex items-center gap-1.5"><Ruler size={13} className="text-stone-400" />{p.unidade}</span>
-                          </td>
-                          <td className="px-5 py-3.5 text-stone-700 tabular-nums">{moeda(p.preco)}</td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-2">
-                              <span className={cn("font-medium tabular-nums", p.estoque <= p.estoqueMin ? "text-red-600" : "text-stone-700")}>
-                                {p.estoque}
-                              </span>
-                              {p.estoque <= p.estoqueMin && (
-                                <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
-                                  <AlertTriangle size={11} /> Baixo
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setFormProduto(p)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
-                                <Pencil size={14} />
-                              </button>
-                              <button onClick={() => setConfirmacao({ tipo: "produto", id: p.id, nome: p.nome })} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-red-600 hover:border hover:border-stone-200">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {produtosFiltrados.map((p) => (
-                      <div key={p.id} className="p-4">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
-                          <div className="flex gap-1 shrink-0">
-                            <button onClick={() => setFormProduto(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Pencil size={14} />
-                            </button>
-                            <button onClick={() => setConfirmacao({ tipo: "produto", id: p.id, nome: p.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mb-2"><CategoriaBadge categoriaId={p.categoria} /></div>
-                        {p.fornecedorId && fornecedoresPorId[p.fornecedorId] && (
-                          <p className="text-xs text-stone-400 mb-2 flex items-center gap-1"><Factory size={11} />{fornecedoresPorId[p.fornecedorId].nome}</p>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-stone-600">
-                          <span className="inline-flex items-center gap-1.5"><Ruler size={12} className="text-stone-400" />{p.unidade}</span>
-                          <span className="tabular-nums font-medium text-stone-700">{moeda(p.preco)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={cn("text-xs font-medium tabular-nums", p.estoque <= p.estoqueMin ? "text-red-600" : "text-stone-500")}>
-                            Estoque: {p.estoque}
-                          </span>
-                          {p.estoque <= p.estoqueMin && (
-                            <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
-                              <AlertTriangle size={11} /> Baixo
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {aba === "estoque" && subEstoque === "posicao" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {produtosFiltrados.length === 0 ? (
-                <EmptyState icon={Warehouse} title="Nenhum produto encontrado" subtitle="Cadastre produtos para começar a controlar o estoque." />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Produto</th>
-                        <th className="text-left px-5 py-3 font-medium">Categoria</th>
-                        <th className="text-left px-5 py-3 font-medium">Estoque</th>
-                        <th className="text-left px-5 py-3 font-medium">Nível</th>
-                        <th className="text-left px-5 py-3 font-medium">Mínimo</th>
-                        <th className="px-5 py-3 w-24"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {produtosFiltrados.map((p) => (
-                        <tr key={p.id} className="group hover:bg-stone-50/70 transition-colors">
-                          <td className="px-5 py-3.5 font-medium text-stone-800">{p.nome}</td>
-                          <td className="px-5 py-3.5"><CategoriaBadge categoriaId={p.categoria} /></td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-2">
-                              <span className={cn("font-medium tabular-nums", p.estoque <= p.estoqueMin ? "text-red-600" : "text-stone-700")}>
-                                {p.estoque} {p.unidade}
-                              </span>
-                              {p.estoque <= p.estoqueMin && (
-                                <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
-                                  <AlertTriangle size={11} /> Baixo
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5"><BarraEstoque produto={p} /></td>
-                          <td className="px-5 py-3.5 text-stone-500 tabular-nums">{p.estoqueMin} {p.unidade}</td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => setFormMovimentacao({ produtoId: p.id })}
-                                className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200"
-                                aria-label="Movimentar"
-                              >
-                                <ArrowRightLeft size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {produtosFiltrados.map((p) => (
-                      <div key={p.id} className="p-4">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
-                          <button
-                            onClick={() => setFormMovimentacao({ produtoId: p.id })}
-                            className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 shrink-0"
-                            aria-label="Movimentar"
-                          >
-                            <ArrowRightLeft size={14} />
-                          </button>
-                        </div>
-                        <div className="mb-2"><CategoriaBadge categoriaId={p.categoria} /></div>
-                        <div className="flex items-center justify-between text-xs text-stone-600 mb-2">
-                          <span className={cn("font-medium tabular-nums", p.estoque <= p.estoqueMin ? "text-red-600" : "text-stone-700")}>
-                            {p.estoque} {p.unidade}
-                          </span>
-                          <span className="text-stone-400">mínimo: {p.estoqueMin} {p.unidade}</span>
-                        </div>
-                        <BarraEstoque produto={p} />
-                        {p.estoque <= p.estoqueMin && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full mt-2">
-                            <AlertTriangle size={11} /> Estoque baixo
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {aba === "estoque" && subEstoque === "historico" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {movimentacoesFiltradas.length === 0 ? (
-                <EmptyState
-                  icon={History}
-                  title="Nenhuma movimentação encontrada"
-                  subtitle="Registre entradas e saídas para acompanhar o histórico do estoque."
-                  acao="Nova"
-                  onAcao={() => setFormMovimentacao({})}
-                />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Data</th>
-                        <th className="text-left px-5 py-3 font-medium">Produto</th>
-                        <th className="text-left px-5 py-3 font-medium">Tipo</th>
-                        <th className="text-left px-5 py-3 font-medium">Quantidade</th>
-                        <th className="text-left px-5 py-3 font-medium">Motivo</th>
-                        <th className="text-left px-5 py-3 font-medium">Observação</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {movimentacoesFiltradas.map((m) => {
-                        const produto = produtosPorId[m.produtoId];
-                        const motivo = (m.tipo === "entrada" ? MOTIVOS_ENTRADA : MOTIVOS_SAIDA).find((mo) => mo.id === m.motivo);
-                        return (
-                          <tr key={m.id} className="hover:bg-stone-50/70 transition-colors">
-                            <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">{formatarData(m.data)}</td>
-                            <td className="px-5 py-3.5 font-medium text-stone-800">{produto?.nome || "—"}</td>
-                            <td className="px-5 py-3.5"><TipoMovimentoChip tipo={m.tipo} /></td>
-                            <td className="px-5 py-3.5 tabular-nums">
-                              <span className={cn("font-medium", m.tipo === "entrada" ? "text-emerald-700" : "text-red-600")}>
-                                {m.tipo === "entrada" ? "+" : "-"}{m.quantidade} {produto?.unidade}
-                              </span>
-                            </td>
-                            <td className="px-5 py-3.5 text-stone-600">{motivo?.label || "—"}</td>
-                            <td className="px-5 py-3.5 text-stone-400 max-w-[220px] truncate">{m.observacao || "—"}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {movimentacoesFiltradas.map((m) => {
-                      const produto = produtosPorId[m.produtoId];
-                      const motivo = (m.tipo === "entrada" ? MOTIVOS_ENTRADA : MOTIVOS_SAIDA).find((mo) => mo.id === m.motivo);
-                      return (
-                        <div key={m.id} className="p-4">
-                          <div className="flex items-start justify-between gap-3 mb-1.5">
-                            <p className="font-medium text-stone-800 min-w-0">{produto?.nome || "—"}</p>
-                            <TipoMovimentoChip tipo={m.tipo} />
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-stone-500 mb-1">
-                            <span>{formatarData(m.data)}</span>
-                            <span className={cn("font-medium tabular-nums", m.tipo === "entrada" ? "text-emerald-700" : "text-red-600")}>
-                              {m.tipo === "entrada" ? "+" : "-"}{m.quantidade} {produto?.unidade}
-                            </span>
-                          </div>
-                          <p className="text-xs text-stone-500">{motivo?.label}</p>
-                          {m.observacao && <p className="text-xs text-stone-400 mt-1">{m.observacao}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {aba === "financeiro" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {lancamentosFiltrados.length === 0 ? (
-                <EmptyState
-                  icon={Wallet}
-                  title="Nenhum lançamento encontrado"
-                  subtitle="Registre contas a receber e a pagar para acompanhar o financeiro."
-                  acao="Novo"
-                  onAcao={() => setFormLancamento({})}
-                />
-              ) : (
-                <>
-                  <table className="w-full text-sm hidden md:table">
-                    <thead>
-                      <tr className="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide border-b border-stone-200">
-                        <th className="text-left px-5 py-3 font-medium">Descrição</th>
-                        <th className="text-left px-5 py-3 font-medium">Tipo</th>
-                        <th className="text-left px-5 py-3 font-medium">Cliente / Fornecedor</th>
-                        <th className="text-left px-5 py-3 font-medium">Vencimento</th>
-                        <th className="text-left px-5 py-3 font-medium">Valor</th>
-                        <th className="text-left px-5 py-3 font-medium">Status</th>
-                        <th className="px-5 py-3 w-28"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {lancamentosFiltrados.map((l) => {
-                        const status = statusLancamento(l);
-                        const contraparte = l.tipo === "receita" ? (clientesPorId[l.clienteId]?.nome || "—") : (l.contraparte || "—");
-                        return (
-                          <tr key={l.id} className="group hover:bg-stone-50/70 transition-colors">
-                            <td className="px-5 py-3.5 font-medium text-stone-800">{l.descricao}</td>
-                            <td className="px-5 py-3.5"><TipoLancamentoChip tipo={l.tipo} /></td>
-                            <td className="px-5 py-3.5 text-stone-600">{contraparte}</td>
-                            <td className="px-5 py-3.5 text-stone-600 whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1.5"><CalendarClock size={13} className="text-stone-400" />{formatarData(l.vencimento)}</span>
-                            </td>
-                            <td className="px-5 py-3.5 tabular-nums font-medium">
-                              <span className={l.tipo === "receita" ? "text-emerald-700" : "text-stone-700"}>{moeda(l.valor)}</span>
-                            </td>
-                            <td className="px-5 py-3.5"><StatusChip status={status} /></td>
-                            <td className="px-5 py-3.5">
-                              <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => alternarPago(l)}
-                                  className={cn(
-                                    "w-7 h-7 rounded-md flex items-center justify-center border",
-                                    l.pago ? "text-emerald-700 border-emerald-200 bg-emerald-50" : "text-stone-400 hover:bg-white hover:text-emerald-700 hover:border-stone-200 border-transparent"
-                                  )}
-                                  aria-label="Marcar como pago"
-                                  title={l.pago ? "Marcado como pago" : "Marcar como pago"}
-                                >
-                                  <Check size={14} />
-                                </button>
-                                <button onClick={() => setFormLancamento(l)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
-                                  <Pencil size={14} />
-                                </button>
-                                <button onClick={() => setConfirmacao({ tipo: "lancamento", id: l.id, nome: l.descricao })} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-red-600 hover:border hover:border-stone-200">
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-
-                  <div className="divide-y divide-stone-100 md:hidden">
-                    {lancamentosFiltrados.map((l) => {
-                      const status = statusLancamento(l);
-                      const contraparte = l.tipo === "receita" ? (clientesPorId[l.clienteId]?.nome || "—") : (l.contraparte || "—");
-                      return (
-                        <div key={l.id} className="p-4">
-                          <div className="flex items-start justify-between gap-3 mb-1.5">
-                            <p className="font-medium text-stone-800 min-w-0">{l.descricao}</p>
-                            <span className={cn("font-medium tabular-nums shrink-0", l.tipo === "receita" ? "text-emerald-700" : "text-stone-700")}>
-                              {moeda(l.valor)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <TipoLancamentoChip tipo={l.tipo} />
-                            <StatusChip status={status} />
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-stone-500">
-                            <span>{contraparte}</span>
-                            <span className="inline-flex items-center gap-1"><CalendarClock size={12} />{formatarData(l.vencimento)}</span>
-                          </div>
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => alternarPago(l)}
-                              className={cn(
-                                "flex-1 py-1.5 rounded-md text-xs font-medium border flex items-center justify-center gap-1",
-                                l.pago ? "text-emerald-700 border-emerald-200 bg-emerald-50" : "text-stone-600 border-stone-200"
-                              )}
-                            >
-                              <Check size={13} /> {l.pago ? "Pago" : "Marcar como pago"}
-                            </button>
-                            <button onClick={() => setFormLancamento(l)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Pencil size={14} />
-                            </button>
-                            <button onClick={() => setConfirmacao({ tipo: "lancamento", id: l.id, nome: l.descricao })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           {aba === "fiscal" && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
-                <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-800">
-                  Este módulo organiza a emissão fiscal, mas ainda não está integrado à SEFAZ. As notas geradas aqui são <strong>rascunhos sem validade fiscal</strong> — a emissão oficial exige certificado digital e um provedor de NF-e conectado a um backend.
-                </p>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem" }}>
-                <KpiCard label="Vendas pendentes de nota" valor={vendasPendentesNota.length} icon={FileClock} tom="bg-amber-50 text-amber-700" />
-                <KpiCard label="Rascunhos gerados" valor={notasFiscais.length} icon={FileCheck2} tom="bg-teal-50 text-teal-700" />
-                <KpiCard
-                  label="Integração"
-                  valor={integracaoConfigurada ? "Configurada" : "Não configurada"}
-                  icon={integracaoConfigurada ? ShieldCheck : ShieldAlert}
-                  tom={integracaoConfigurada ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}
-                />
-              </div>
-
-              <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-md">
-                {[
-                  { id: "pendentes", label: "Pendentes", icon: FileClock },
-                  { id: "rascunhos", label: "Rascunhos", icon: FileCheck2 },
-                  { id: "config", label: "Configurações", icon: Settings2 },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setSubFiscal(s.id)}
-                    className={cn(
-                      "flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5",
-                      subFiscal === s.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                    )}
-                  >
-                    <s.icon size={14} /> {s.label}
-                  </button>
-                ))}
-              </div>
-
-              {subFiscal === "pendentes" && (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  {vendasPendentesNota.length === 0 ? (
-                    <EmptyState icon={FileCheck2} title="Nenhuma venda pendente" subtitle="Todas as vendas já têm um rascunho de NF-e gerado." />
-                  ) : (
-                    <div className="divide-y divide-stone-100">
-                      {vendasPendentesNota.map((v) => {
-                        const cliente = v.clienteId ? clientesPorId[v.clienteId] : null;
-                        return (
-                          <div key={v.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                            <div className="min-w-0">
-                              <p className="font-medium text-stone-800">Venda nº {v.numero}</p>
-                              <p className="text-xs text-stone-400">{formatarData(v.data)} · {cliente ? cliente.nome : "Consumidor não identificado"}</p>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="font-medium text-stone-700 tabular-nums">{moeda(v.total ?? totalVenda(v))}</span>
-                              <button
-                                onClick={() => gerarRascunhoNota(v)}
-                                className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                              >
-                                <FileCheck2 size={14} /> Gerar rascunho
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {subFiscal === "rascunhos" && (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  {notasComVenda.length === 0 ? (
-                    <EmptyState icon={FileText} title="Nenhum rascunho gerado" subtitle="Gere rascunhos a partir das vendas pendentes na aba anterior." />
-                  ) : (
-                    <div className="divide-y divide-stone-100">
-                      {notasComVenda.map((n) => (
-                        <button
-                          key={n.id}
-                          onClick={() => setNotaPreview(n)}
-                          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-stone-50/70 transition-colors"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-medium text-stone-800">NF-e nº {n.numero} · Série {n.serie}</p>
-                            <p className="text-xs text-stone-400">Venda nº {n.venda?.numero} · gerada em {formatarData(n.dataGeracao)}</p>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="inline-flex items-center gap-1 text-xs bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full">
-                              <FileClock size={12} /> Rascunho
-                            </span>
-                            <ChevronRight size={16} className="text-stone-300" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {subFiscal === "config" && (
-                <ConfigFiscalForm inicial={empresaFiscal} onSalvar={salvarConfigFiscal} />
-              )}
-            </div>
+            <FiscalView
+              clientesPorId={clientesPorId}
+              empresaFiscal={empresaFiscal}
+              gerarRascunhoNota={gerarRascunhoNota}
+              integracaoConfigurada={integracaoConfigurada}
+              notasComVenda={notasComVenda}
+              notasFiscais={notasFiscais}
+              salvarConfigFiscal={salvarConfigFiscal}
+              setNotaPreview={setNotaPreview}
+              setSubFiscal={setSubFiscal}
+              subFiscal={subFiscal}
+              vendasPendentesNota={vendasPendentesNota}
+            />
           )}
-
-          {aba === "entregas" && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                {entregasFiltradas.length === 0 ? (
-                  <EmptyState
-                    icon={Truck}
-                    title="Nenhuma entrega encontrada"
-                    subtitle="Cadastre uma entrega vinculada a uma venda ou avulsa."
-                    acao="Nova"
-                    onAcao={() => setFormEntrega({})}
-                  />
-                ) : (
-                  <div className="divide-y divide-stone-100">
-                    {entregasFiltradas.map((e) => {
-                      const cliente = e.clienteId ? clientesPorId[e.clienteId] : null;
-                      const atrasada = (e.status === "pendente" || e.status === "em_rota") && e.dataPrevista < hojeISO();
-                      return (
-                        <div key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <p className="font-medium text-stone-800">{cliente ? cliente.nome : "Cliente não identificado"}</p>
-                              <StatusEntregaChip status={e.status} />
-                              {atrasada && (
-                                <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
-                                  <AlertTriangle size={11} /> Atrasada
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-stone-500 flex items-start gap-1.5 mb-0.5">
-                              <MapPin size={12} className="text-stone-400 shrink-0 mt-0.5" /> {e.endereco || "Endereço não informado"}
-                            </p>
-                            <p className="text-xs text-stone-400">{e.itensDescricao}</p>
-                            <p className="text-xs text-stone-400 mt-0.5 flex items-center gap-3 flex-wrap">
-                              <span className="inline-flex items-center gap-1"><CalendarDays size={11} /> {formatarData(e.dataPrevista)}</span>
-                              {e.motorista && <span className="inline-flex items-center gap-1"><UserRound size={11} /> {e.motorista}</span>}
-                              {e.veiculo && <span className="inline-flex items-center gap-1"><Truck size={11} /> {e.veiculo}</span>}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {(e.status === "pendente" || e.status === "em_rota") && (
-                              <button
-                                onClick={() => avancarStatusEntrega(e)}
-                                className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                              >
-                                {e.status === "pendente" ? <><Navigation size={13} /> Sair para entrega</> : <><PackageCheck size={13} /> Confirmar entrega</>}
-                              </button>
-                            )}
-                            <button onClick={() => setFormEntrega(e)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
-                              <Pencil size={14} />
-                            </button>
-                            {e.status !== "cancelada" && e.status !== "entregue" && (
-                              <button onClick={() => cancelarEntrega(e.id)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
-                                <PackageX size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {aba === "compras" && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              {pedidosFiltrados.length === 0 ? (
-                <EmptyState
-                  icon={PackageOpen}
-                  title="Nenhum pedido de compra encontrado"
-                  subtitle="Registre um pedido ao fornecedor; quando a mercadoria chegar, transforme em compra num clique."
-                  acao="Novo"
-                  onAcao={() => setFormPedido({})}
-                />
-              ) : (
-                <div className="divide-y divide-stone-100">
-                  {pedidosFiltrados.map((p) => {
-                    const fornecedor = fornecedoresPorId[p.fornecedorId];
-                    const atrasado = p.status === "pendente" && p.dataPrevista < hojeISO();
-                    return (
-                      <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <p className="font-medium text-stone-800">Pedido nº {p.numero} · {fornecedor ? fornecedor.nome : "Fornecedor removido"}</p>
-                            <span className={cn(
-                              "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
-                              p.status === "recebido" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-                            )}>
-                              {p.status === "recebido" ? <PackageCheck size={11} /> : <PackageOpen size={11} />}
-                              {p.status === "recebido" ? "Recebido" : "Pendente"}
-                            </span>
-                            {atrasado && (
-                              <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
-                                <AlertTriangle size={11} /> Atrasado
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-stone-400">
-                            {p.itens.map((i) => `${i.quantidade}x ${i.nome}`).join(", ")}
-                          </p>
-                          <p className="text-xs text-stone-400 mt-0.5 flex items-center gap-3 flex-wrap">
-                            <span className="inline-flex items-center gap-1"><CalendarDays size={11} /> Previsão: {formatarData(p.dataPrevista)}</span>
-                            {p.dataRecebimento && <span className="inline-flex items-center gap-1"><PackageCheck size={11} /> Recebido: {formatarData(p.dataRecebimento)}</span>}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-medium text-stone-700 tabular-nums">{moeda(totalPedido(p))}</span>
-                          {p.status === "pendente" && (
-                            <button
-                              onClick={() => registrarRecebimento(p)}
-                              className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                            >
-                              <PackageCheck size={13} /> Registrar recebimento
-                            </button>
-                          )}
-                          {p.status === "pendente" && (
-                            <button onClick={() => setFormPedido(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          {p.status === "pendente" && (
-                            <button onClick={() => setConfirmacao({ tipo: "pedido", id: p.id, nome: `Pedido nº ${p.numero}` })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
           {aba === "usuarios" && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3.5">
-                <Lock size={16} className="text-stone-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-stone-600">
-                  Isso controla o que cada papel <strong>vê e pode editar dentro do sistema</strong>. Importante: essa é uma organização no nível da interface — a segurança de verdade (impedir alguém de burlar isso) só existe quando houver um backend validando cada ação. Use o seletor de sessão no rodapé do menu lateral pra testar como fica pra cada papel.
-                </p>
-              </div>
-
-              <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-xs">
-                {[
-                  { id: "usuarios", label: "Usuários", icon: UserCog },
-                  { id: "papeis", label: "Papéis", icon: Lock },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setSubUsuarios(s.id)}
-                    className={cn(
-                      "flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5",
-                      subUsuarios === s.id ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
-                    )}
-                  >
-                    <s.icon size={14} /> {s.label}
-                  </button>
-                ))}
-              </div>
-
-              {subUsuarios === "usuarios" && (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="flex justify-end p-3 border-b border-stone-100">
-                    <button
-                      onClick={() => setFormUsuario({})}
-                      className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    >
-                      <Plus size={14} /> Novo usuário
-                    </button>
-                  </div>
-                  <div className="divide-y divide-stone-100">
-                    {usuarios.map((u) => (
-                      <div key={u.id} className="flex items-center justify-between gap-3 p-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
-                            {iniciais(u.nome)}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-stone-800 truncate">{u.nome}</p>
-                              {!u.ativo && (
-                                <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">Bloqueado</span>
-                              )}
-                              {u.id === usuarioLogadoId && (
-                                <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full">Sessão atual</span>
-                              )}
-                            </div>
-                            <p className="text-xs text-stone-400 truncate">{u.email} · {papeisPorId[u.papelId]?.nome}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button onClick={() => setFormUsuario(u)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
-                            <Pencil size={14} />
-                          </button>
-                          {u.id !== usuarioLogadoId && (
-                            <button onClick={() => setConfirmacao({ tipo: "usuario", id: u.id, nome: u.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {subUsuarios === "papeis" && (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="flex justify-end p-3 border-b border-stone-100">
-                    <button
-                      onClick={() => setFormPapel({})}
-                      className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    >
-                      <Plus size={14} /> Novo papel
-                    </button>
-                  </div>
-                  <div className="divide-y divide-stone-100">
-                    {papeis.map((p) => {
-                      const emUso = usuarios.some((u) => u.papelId === p.id);
-                      const nivelEditar = MODULOS_PERMISSAO.filter((m) => p.permissoes[m.id] === "editar").length;
-                      const nivelVer = MODULOS_PERMISSAO.filter((m) => p.permissoes[m.id] === "visualizar").length;
-                      return (
-                        <div key={p.id} className="flex items-center justify-between gap-3 p-4">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-stone-800">{p.nome}</p>
-                              {p.fixo && <span className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full">Acesso total</span>}
-                            </div>
-                            <p className="text-xs text-stone-400">
-                              {nivelEditar} {nivelEditar === 1 ? "módulo" : "módulos"} com edição · {nivelVer} só visualização
-                            </p>
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            {!p.fixo && (
-                              <button onClick={() => setFormPapel(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
-                                <Pencil size={14} />
-                              </button>
-                            )}
-                            {!p.fixo && !emUso && (
-                              <button onClick={() => setConfirmacao({ tipo: "papel", id: p.id, nome: p.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            <UsuariosView
+              barraBusca={barraBusca}
+              papeis={papeis}
+              papeisPorId={papeisPorId}
+              setConfirmacao={setConfirmacao}
+              setFormPapel={setFormPapel}
+              setFormUsuario={setFormUsuario}
+              setSubUsuarios={setSubUsuarios}
+              subUsuarios={subUsuarios}
+              usuarioLogadoId={usuarioLogadoId}
+              usuarios={usuarios}
+              barraBusca={barraBusca}
+            />
           )}
         </main>
       </div>

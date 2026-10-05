@@ -9,7 +9,14 @@ export default [
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
-      globals: globals.browser,
+      // Lista curta de globais do navegador: os globais completos (globals.browser) incluem
+      // History, Navigation, Lock etc., que escondem import esquecido de ícone do lucide-react.
+      globals: {
+        ...globals.es2021,
+        window: "readonly", document: "readonly", console: "readonly", fetch: "readonly",
+        alert: "readonly", confirm: "readonly", navigator: "readonly",
+        setTimeout: "readonly", clearTimeout: "readonly", URL: "readonly", Blob: "readonly",
+      },
       parserOptions: { ecmaFeatures: { jsx: true }, sourceType: "module" },
     },
     plugins: { react, "react-hooks": reactHooks },

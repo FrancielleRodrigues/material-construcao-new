@@ -5,8 +5,9 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 ## Estado atual
 
 - Projeto Vite + React + Tailwind v4 (`npm run dev`, `npm run build`, `npm run lint`).
-- Estrutura em `src/`: `utils/` (formatação, CEP), `hooks/`, `data/` (constantes e dados iniciais), `components/` (UI compartilhada e `ui/`), `modules/<modulo>/` (formulários, modais e chips de cada módulo).
-- `src/App.jsx` ainda concentra **todo o estado** e o JSX das abas (~2.400 linhas); dividir as abas em componentes de módulo é a próxima etapa da refatoração.
+- Estrutura em `src/`: `utils/` (formatação, CEP), `hooks/`, `data/` (constantes e dados iniciais), `components/` (UI compartilhada e `ui/`), `modules/<modulo>/` (tela da aba `XView.jsx`, formulários, modais e chips de cada módulo).
+- `src/App.jsx` (~1.100 linhas) é o shell: menu lateral, barra do topo, **todo o estado**, handlers e regras de integração entre módulos (finalizar venda, receber compra etc.). Cada aba é um `XView` que recebe **props explícitas** do App (a barra de busca mobile chega como `barraBusca`).
+- Próxima etapa da refatoração: mover para dentro de cada view o estado puramente de UI (ex.: PDV tem ~43 props; filtros, campos de bipar/CEP) e, ao ligar o Supabase, mover o estado de dados para hooks/serviços.
 - Dependências: React, Tailwind CSS, `lucide-react`.
 - **Todos os dados vivem em memória (`useState`)**: somem ao recarregar a página. Não há backend nem banco ainda.
 - Busca de CEP via `https://viacep.com.br/ws/{cep}/json/` (função `buscarCep`). Não funciona no preview do claude.ai (sandbox bloqueia chamadas externas); deve funcionar rodando localmente.
@@ -53,4 +54,4 @@ Integrações entre módulos (já implementadas):
 
 ## Verificação
 
-Rodar `npm run lint` (pega identificador sem import, que o build não pega) e `npm run build` a cada etapa grande; abrir cada módulo no navegador para checar erros de execução.
+Rodar `npm run lint` (pega identificador sem import, que o build não pega; a lista de globais do navegador é curta de propósito — ícones do lucide como `History` colidem com globais do navegador e viram `Illegal constructor` em runtime) e `npm run build` a cada etapa grande; abrir cada módulo no navegador para checar erros de execução.
