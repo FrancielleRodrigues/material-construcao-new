@@ -4,7 +4,9 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 
 ## Estado atual
 
-- Protótipo front-end em React, num único arquivo grande: `CadastroClientesProdutos.jsx` (~5.000 linhas). Deve virar `src/App.jsx` num projeto Vite.
+- Projeto Vite + React + Tailwind v4 (`npm run dev`, `npm run build`, `npm run lint`).
+- Estrutura em `src/`: `utils/` (formatação, CEP), `hooks/`, `data/` (constantes e dados iniciais), `components/` (UI compartilhada e `ui/`), `modules/<modulo>/` (formulários, modais e chips de cada módulo).
+- `src/App.jsx` ainda concentra **todo o estado** e o JSX das abas (~2.400 linhas); dividir as abas em componentes de módulo é a próxima etapa da refatoração.
 - Dependências: React, Tailwind CSS, `lucide-react`.
 - **Todos os dados vivem em memória (`useState`)**: somem ao recarregar a página. Não há backend nem banco ainda.
 - Busca de CEP via `https://viacep.com.br/ws/{cep}/json/` (função `buscarCep`). Não funciona no preview do claude.ai (sandbox bloqueia chamadas externas); deve funcionar rodando localmente.
@@ -51,4 +53,4 @@ Integrações entre módulos (já implementadas):
 
 ## Verificação
 
-O arquivo não tem build/teste automatizado. Hoje a checagem era contagem de chaves/parênteses. No projeto novo, rodar `npm run dev` e `npm run build` a cada etapa grande.
+Rodar `npm run lint` (pega identificador sem import, que o build não pega) e `npm run build` a cada etapa grande; abrir cada módulo no navegador para checar erros de execução.
