@@ -4,12 +4,14 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 
 ## Estado atual
 
-- Projeto Vite + React + Tailwind v4 (`npm run dev`, `npm run build`, `npm run lint`).
+- Projeto Vite + React + Tailwind v4 + Supabase (`npm run dev`, `build`, `lint`, `test:db`, `test:e2e`). Passo a passo de instalação no `README.md`.
 - Estrutura em `src/`: `utils/` (formatação, CEP), `hooks/`, `data/` (constantes e dados iniciais), `components/` (UI compartilhada e `ui/`), `modules/<modulo>/` (tela da aba `XView.jsx`, formulários, modais e chips de cada módulo).
-- `src/App.jsx` (~1.100 linhas) é o shell: menu lateral, barra do topo, **todo o estado**, handlers e regras de integração entre módulos (finalizar venda, receber compra etc.). Cada aba é um `XView` que recebe **props explícitas** do App (a barra de busca mobile chega como `barraBusca`).
-- Próxima etapa da refatoração: mover para dentro de cada view o estado puramente de UI (ex.: PDV tem ~43 props; filtros, campos de bipar/CEP) e, ao ligar o Supabase, mover o estado de dados para hooks/serviços.
+- `src/App.jsx` só decide a tela (config do Supabase → login → sistema). `src/Sistema.jsx` é o shell: menu, estado, handlers. Cada aba é um `XView` com **props explícitas** (a barra de busca mobile chega como `barraBusca`).
+- Dados: `src/data/api.js` (Supabase) + `mapeamento.js` (snake_case ↔ camelCase). O estado das listas em `Sistema.jsx` é um espelho do banco: toda ação passa por `executar(acao, listasParaRecarregar)`, que bloqueia clique duplo, mostra o erro (faixa vermelha) e recarrega as listas afetadas. O formulário só fecha se der certo.
+- Próxima etapa da refatoração: mover para dentro de cada view o estado puramente de UI (PDV tem ~43 props) e extrair o estado de dados do `Sistema.jsx` para hooks.
 - Dependências: React, Tailwind CSS, `lucide-react`.
-- **Todos os dados vivem em memória (`useState`)**: somem ao recarregar a página. Não há backend nem banco ainda.
+- Dados no **Supabase (Postgres)**; login por e-mail/senha (Supabase Auth). O usuário logado é ligado a `usuarios` pelo e-mail; sem linha ativa em `usuarios` o sistema mostra "Sem acesso".
+- Banco em `supabase/migrations/` (uma migração; para mudanças futuras crie arquivos novos, nunca edite a que já foi aplicada). Funções novas/tabelas novas recebem permissões padrão do Supabase para `anon`/`authenticated`: **sempre** repita o `revoke`/`grant` do fim da migração e ligue RLS.
 - Busca de CEP via `https://viacep.com.br/ws/{cep}/json/` (função `buscarCep`). Não funciona no preview do claude.ai (sandbox bloqueia chamadas externas); deve funcionar rodando localmente.
 
 ## Módulos já construídos
@@ -42,16 +44,17 @@ Integrações entre módulos (já implementadas):
 ## Regras que NÃO podem ser quebradas
 
 - **NF-e/cupom fiscal gerados aqui são rascunhos sem validade fiscal.** A interface já avisa isso; nunca apresentar como nota válida. Emissão real exige certificado digital A1 no servidor + provedor (Focus NFe, eNotas, NFe.io) ou SEFAZ direto, sempre pelo backend.
-- **Permissões só no front-end não são segurança.** Para valer, precisam ser validadas no backend (ex.: Row Level Security no Supabase) a cada ação.
+- **Permissões só no front-end não são segurança.** Aqui elas valem no banco (RLS por papel + funções `SECURITY DEFINER` que conferem a permissão). Ao criar tabela ou função nova, ligue RLS e confira a permissão no banco — não confie no menu.
+- **Nunca** colocar a chave `secret`/`service_role` no front-end nem no repositório; só a `publishable` (em `.env.local`, fora do git).
 
 ## Próximos passos sugeridos (ordem)
 
 1. Criar projeto Vite + Tailwind, copiar o arquivo para `src/App.jsx`, confirmar que roda (`npm run dev`). Depois **dividir o arquivo em módulos** (`components/`, `modules/`, `data/`, `utils/`).
-2. **Banco**: Supabase (Postgres, relacional, plano gratuito). Tabelas: clientes, fornecedores, produtos, movimentacoes_estoque, pedidos_compra (+itens), vendas (+itens), lancamentos, entregas, notas_fiscais, usuarios, papeis. Trocar os `useState` iniciais por chamadas ao Supabase.
-3. **Autenticação real** (Supabase Auth) + **RLS** por papel, substituindo o seletor de sessão de teste.
+2. ~~Banco (Supabase)~~ — feito, testado localmente (PGlite). **Ainda não foi exercitado contra o projeto Supabase real**: aplicar a migração e conferir o primeiro login.
+3. ~~Autenticação + RLS por papel~~ — feito. Falta: convidar usuários pelo sistema (hoje a senha é criada no painel do Supabase) e recuperação de senha.
 4. **Fiscal real** via provedor de NF-e, com função no backend (certificado nunca no navegador).
 5. Faltantes levantados: abertura/fechamento de caixa, orçamento/cotação, devolução (estorno + volta ao estoque), comissão de vendedor, conta por obra/projeto (construtoras), relatórios (curva ABC, margem, inadimplência), etiqueta de código de barras, alertas de estoque baixo/contas a vencer.
 
 ## Verificação
 
-Rodar `npm run lint` (pega identificador sem import, que o build não pega; a lista de globais do navegador é curta de propósito — ícones do lucide como `History` colidem com globais do navegador e viram `Illegal constructor` em runtime) e `npm run build` a cada etapa grande; abrir cada módulo no navegador para checar erros de execução.
+Rodar `npm run test:db` e `npm run test:e2e` ao mexer no banco, na camada de dados ou nos fluxos; `npm run lint` (pega identificador sem import, que o build não pega; a lista de globais do navegador é curta de propósito — ícones do lucide como `History` colidem com globais do navegador e viram `Illegal constructor` em runtime) e `npm run build` a cada etapa grande; abrir cada módulo no navegador para checar erros de execução.

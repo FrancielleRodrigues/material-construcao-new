@@ -370,22 +370,11 @@ create policy movimentacoes_select on public.movimentacoes for select to authent
 
 create policy pedidos_select on public.pedidos_compra for select to authenticated
   using ((select public.pode_ver('compras')));
-create policy pedidos_insert on public.pedidos_compra for insert to authenticated
-  with check ((select public.pode_editar('compras')));
--- Só pedidos pendentes podem ser alterados; o recebimento é feito por registrar_recebimento().
-create policy pedidos_update on public.pedidos_compra for update to authenticated
-  using ((select public.pode_editar('compras')) and status = 'pendente')
-  with check ((select public.pode_editar('compras')) and status = 'pendente');
+-- Criar/editar pedido: salvar_pedido_compra(). Receber: registrar_recebimento().
 create policy pedidos_delete on public.pedidos_compra for delete to authenticated
   using ((select public.pode_editar('compras')));
-
 create policy pedidos_itens_select on public.pedidos_compra_itens for select to authenticated
   using ((select public.pode_ver('compras')));
-create policy pedidos_itens_write on public.pedidos_compra_itens for all to authenticated
-  using ((select public.pode_editar('compras'))
-         and exists (select 1 from public.pedidos_compra p where p.id = pedido_id and p.status = 'pendente'))
-  with check ((select public.pode_editar('compras'))
-         and exists (select 1 from public.pedidos_compra p where p.id = pedido_id and p.status = 'pendente'));
 
 create policy vendas_select on public.vendas for select to authenticated
   using ((select public.pode_ver('venda', 'entregas', 'fiscal')));
@@ -426,7 +415,8 @@ end $$;
 
 -- Entrada/saída manual de estoque.
 create or replace function public.registrar_movimentacao(
-  p_produto_id bigint, p_tipo text, p_quantidade numeric, p_motivo text, p_observacao text default ''
+  p_produto_id bigint, p_tipo text, p_quantidade numeric, p_motivo text, p_observacao text default '',
+  p_data date default null
 ) returns bigint
 language plpgsql security definer set search_path = public as $$
 declare v_prod public.produtos; v_id bigint;
@@ -445,9 +435,45 @@ begin
   update public.produtos
      set estoque = estoque + case when p_tipo = 'entrada' then p_quantidade else -p_quantidade end
    where id = p_produto_id;
-  insert into public.movimentacoes (produto_id, tipo, quantidade, motivo, observacao)
-  values (p_produto_id, p_tipo, p_quantidade, p_motivo, coalesce(p_observacao, ''))
+  insert into public.movimentacoes (produto_id, tipo, quantidade, motivo, observacao, data)
+  values (p_produto_id, p_tipo, p_quantidade, p_motivo, coalesce(p_observacao, ''), coalesce(p_data, public.hoje()))
   returning id into v_id;
+  return v_id;
+end $$;
+
+-- Cria ou edita um pedido de compra PENDENTE junto com os itens, numa transação só.
+-- p_itens: [{"produto_id": 1, "nome": "Cimento", "quantidade": 100, "preco_unitario": 32.5}, ...]
+create or replace function public.salvar_pedido_compra(
+  p_id bigint, p_fornecedor_id bigint, p_data_prevista date, p_observacao text, p_itens jsonb
+) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare v_id bigint; v_status text; v_item jsonb;
+begin
+  perform public.exigir_editar('compras');
+  if p_itens is null or jsonb_typeof(p_itens) <> 'array' or jsonb_array_length(p_itens) = 0 then
+    raise exception 'O pedido precisa ter ao menos um item.';
+  end if;
+
+  if p_id is null then
+    insert into public.pedidos_compra (fornecedor_id, data_prevista, observacao)
+    values (p_fornecedor_id, p_data_prevista, coalesce(p_observacao, ''))
+    returning id into v_id;
+  else
+    select status into v_status from public.pedidos_compra where id = p_id for update;
+    if not found then raise exception 'Pedido não encontrado.'; end if;
+    if v_status <> 'pendente' then raise exception 'Pedido já recebido não pode ser alterado.'; end if;
+    update public.pedidos_compra
+       set fornecedor_id = p_fornecedor_id, data_prevista = p_data_prevista, observacao = coalesce(p_observacao, '')
+     where id = p_id;
+    delete from public.pedidos_compra_itens where pedido_id = p_id;
+    v_id := p_id;
+  end if;
+
+  for v_item in select value from jsonb_array_elements(p_itens) loop
+    insert into public.pedidos_compra_itens (pedido_id, produto_id, nome, quantidade, preco_unitario)
+    values (v_id, nullif(v_item ->> 'produto_id', '')::bigint, coalesce(v_item ->> 'nome', ''),
+            (v_item ->> 'quantidade')::numeric, (v_item ->> 'preco_unitario')::numeric);
+  end loop;
   return v_id;
 end $$;
 
@@ -603,12 +629,11 @@ revoke all on all functions in schema public from public, anon, authenticated;
 
 grant select, insert, update, delete on
   public.papeis, public.usuarios, public.clientes, public.fornecedores, public.produtos,
-  public.pedidos_compra_itens, public.entregas, public.lancamentos
+  public.entregas, public.lancamentos
   to authenticated;
--- Pedido: status/recebimento/numero só mudam por função/sequência, nunca pelo cliente.
+-- Pedidos: leitura direta e exclusão; criar/editar/receber só pelas funções.
 grant select, delete on public.pedidos_compra to authenticated;
-grant insert (fornecedor_id, data_prevista, observacao) on public.pedidos_compra to authenticated;
-grant update (fornecedor_id, data_prevista, observacao) on public.pedidos_compra to authenticated;
+grant select on public.pedidos_compra_itens to authenticated;
 grant select on public.movimentacoes, public.vendas, public.vendas_itens, public.notas_fiscais to authenticated;
 grant select, update on public.empresa_fiscal to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
@@ -616,7 +641,8 @@ grant usage, select on all sequences in schema public to authenticated;
 grant execute on function
   public.hoje(), public.permissoes_validas(jsonb), public.nivel(text), public.pode_ver(text[]), public.pode_editar(text),
   public.app_usuario_ref(),
-  public.registrar_movimentacao(bigint, text, numeric, text, text),
+  public.registrar_movimentacao(bigint, text, numeric, text, text, date),
+  public.salvar_pedido_compra(bigint, bigint, date, text, jsonb),
   public.registrar_recebimento(bigint),
   public.gerar_rascunho_nota(bigint),
   public.finalizar_venda(bigint, text, jsonb, text, numeric, text, text, date, boolean)

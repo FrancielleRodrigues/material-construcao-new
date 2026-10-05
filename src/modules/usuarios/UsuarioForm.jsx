@@ -73,6 +73,13 @@ export function UsuarioForm({ inicial, papeis, onSalvar, onCancelar }) {
           Usuário ativo (desmarque para bloquear o acesso sem excluir o cadastro)
         </label>
 
+        {!inicial && (
+          <p className="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+            Este cadastro define o papel e o acesso. A senha de login é criada à parte, no painel do Supabase
+            (Authentication → Users → Add user), usando o mesmo e-mail.
+          </p>
+        )}
+
         {erro && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{erro}</p>
         )}

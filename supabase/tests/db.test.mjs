@@ -120,7 +120,8 @@ test("registrar_movimentacao: entrada, saída e bloqueio de saldo negativo", asy
     assert.equal((await q("select count(*)::int n from movimentacoes where produto_id = 2 and motivo = 'perda'"))[0].n, 1);
     await erro(q("select registrar_movimentacao(2, 'saida', 999, 'perda')"), "Estoque insuficiente");
     await erro(q("select registrar_movimentacao(2, 'saida', 0, 'perda')"), "maior que zero");
-    await q("select registrar_movimentacao(2, 'entrada', 5, 'ajuste')");
+    await q("select registrar_movimentacao(2, 'entrada', 5, 'ajuste', '', '2026-01-15')");
+    assert.equal((await q("select data::text d from movimentacoes where produto_id = 2 order by id desc limit 1"))[0].d, "2026-01-15");
   });
   await como("vend@x.com", async () => {
     await erro(q("select registrar_movimentacao(2, 'entrada', 1, 'ajuste')"), "permiss");
@@ -129,20 +130,33 @@ test("registrar_movimentacao: entrada, saída e bloqueio de saldo negativo", asy
 
 test("compra: pedido → recebimento dá entrada, cria despesa e não repete", async () => {
   await como("admin@x.com", async () => {
-    const [{ id }] = await q("insert into pedidos_compra (fornecedor_id, data_prevista, observacao) values (1, current_date + 2, '') returning id");
+    const itens = JSON.stringify([{ produto_id: 1, nome: "Cimento", quantidade: 100, preco_unitario: 32.5 }]);
+    const [{ salvar_pedido_compra: id }] = await q("select salvar_pedido_compra(null, 1, current_date + 2, '', $1::jsonb)", [itens]);
     assert.equal((await q("select numero from pedidos_compra where id = $1", [id]))[0].numero, 5001);
-    await q("insert into pedidos_compra_itens (pedido_id, produto_id, nome, quantidade, preco_unitario) values ($1,1,'Cimento',100,32.5)", [id]);
+    // escrita direta nas tabelas de pedido é negada: só pelas funções
     await erro(q("update pedidos_compra set status = 'recebido' where id = $1", [id]), "permission denied");
+    await erro(q("insert into pedidos_compra (fornecedor_id) values (1)"), "permission denied");
+    await erro(q("insert into pedidos_compra_itens (pedido_id, nome, quantidade, preco_unitario) values ($1,'x',1,1)", [id]), "permission denied");
+    // editar troca os itens por completo
+    await q("select salvar_pedido_compra($1, 1, current_date + 3, 'urgente', $2::jsonb)", [id, JSON.stringify([
+      { produto_id: 1, nome: "Cimento", quantidade: 100, preco_unitario: 32.5 },
+      { produto_id: "", nome: "Item avulso", quantidade: 1, preco_unitario: 0 }])]);
+    assert.equal((await q("select count(*)::int n from pedidos_compra_itens where pedido_id = $1", [id]))[0].n, 2);
+    await q("select salvar_pedido_compra($1, 1, current_date + 3, 'urgente', $2::jsonb)", [id, itens]);
+    assert.equal((await q("select count(*)::int n from pedidos_compra_itens where pedido_id = $1", [id]))[0].n, 1);
+    await erro(q("select salvar_pedido_compra(null, 1, null, '', '[]'::jsonb)"), "ao menos um item");
+
     await q("select registrar_recebimento($1)", [id]);
     assert.equal((await q("select estoque::float e from produtos where id = 1"))[0].e, 220);
     const [l] = await q("select tipo, valor::float v, pago, contraparte, fornecedor_id from lancamentos where descricao = 'Compra - Pedido nº 5001'");
     assert.deepEqual(l, { tipo: "despesa", v: 3250, pago: false, contraparte: "Votoran", fornecedor_id: 1 });
     assert.equal((await q("select status from pedidos_compra where id = $1", [id]))[0].status, "recebido");
     await erro(q("select registrar_recebimento($1)", [id]), "já foi recebido");
-    // pedido recebido fica travado
-    assert.equal((await q("update pedidos_compra set observacao = 'x' where id = $1 returning id", [id])).length, 0);
-    await erro(q("insert into pedidos_compra_itens (pedido_id, nome, quantidade, preco_unitario) values ($1,'x',1,1)", [id]), "row-level security");
+    await erro(q("select salvar_pedido_compra($1, 1, null, '', $2::jsonb)", [id, itens]), "já recebido");
     await q("select registrar_movimentacao(1, 'saida', 100, 'ajuste', 'volta ao saldo do teste')");
+  });
+  await como("vend@x.com", async () => {
+    await erro(q("select salvar_pedido_compra(null, 1, null, '', '[{\"nome\":\"x\",\"quantidade\":1,\"preco_unitario\":1}]'::jsonb)"), "permiss");
   });
 });
 

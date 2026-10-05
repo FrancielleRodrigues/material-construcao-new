@@ -8,9 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "test:db": "node --test supabase/tests/db.test.mjs"
+    "test:db": "node --test supabase/tests/db.test.mjs",
+    "test:e2e": "node --test --test-timeout=120000 e2e/fluxos.test.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
@@ -24,6 +26,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
+    "playwright-core": "^1.63.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.2"
   }
