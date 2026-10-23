@@ -2,7 +2,9 @@
 // Postgres de verdade (PGlite) que recebeu a MESMA migração do Supabase, com RLS e funções.
 // Implementa só o trecho da API do supabase-js que o app usa.
 import { PGlite } from "@electric-sql/pglite";
-import migracao from "../supabase/migrations/20261005000000_schema_inicial.sql?raw";
+// todas as migrações, em ordem de nome (as mesmas que vão para o Supabase)
+const migracoes = import.meta.glob("../supabase/migrations/*.sql", { query: "?raw", import: "default", eager: true });
+const migracao = Object.keys(migracoes).sort().map((k) => migracoes[k]).join("\n");
 import semente from "./semente.sql?raw";
 
 export const supabaseConfigurado = true;

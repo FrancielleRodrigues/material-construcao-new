@@ -8,7 +8,10 @@ import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const migracao = fs.readFileSync(path.join(dir, "../migrations/20261005000000_schema_inicial.sql"), "utf8");
+// aplica todas as migrações, em ordem de nome
+const pastaMigracoes = path.join(dir, "../migrations");
+const migracao = fs.readdirSync(pastaMigracoes).filter((f) => f.endsWith(".sql")).sort()
+  .map((f) => fs.readFileSync(path.join(pastaMigracoes, f), "utf8")).join("\n");
 
 // Imita o que o Supabase já fornece: papéis anon/authenticated e auth.jwt().
 const STUB = `
