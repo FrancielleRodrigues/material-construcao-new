@@ -1,0 +1,28 @@
+# Confere o código a cada push/pull request: lint, testes do banco e build.
+# NÃO publica nada: a publicação é feita pelo serviço de hospedagem (ex.: Cloudflare Pages).
+name: Conferir
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    env:
+      # valores fictícios só para o build não cair na tela "falta configurar"
+      VITE_SUPABASE_URL: https://exemplo.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_exemplo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:db
+      - run: npm run build

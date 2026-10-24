@@ -12,6 +12,7 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 - Dependências: React, Tailwind CSS, `lucide-react`.
 - Dados no **Supabase (Postgres)**; login por e-mail/senha (Supabase Auth). O usuário logado é ligado a `usuarios` pelo e-mail; sem linha ativa em `usuarios` o sistema mostra "Sem acesso".
 - Banco em `supabase/migrations/` (uma migração; para mudanças futuras crie arquivos novos, nunca edite a que já foi aplicada). Funções novas/tabelas novas recebem permissões padrão do Supabase para `anon`/`authenticated`: **sempre** repita o `revoke`/`grant` do fim da migração e ligue RLS.
+- Hospedagem recomendada: Cloudflare Pages (cabeçalhos de segurança em `public/_headers`, incluindo CSP: ao integrar um novo serviço externo, inclua o domínio em `connect-src`). GitHub Pages foi descartado (sem cabeçalhos de segurança). `.github/workflows/conferir.yml` só confere o código, não publica. Repositório deve ficar privado.
 - Busca de CEP via `https://viacep.com.br/ws/{cep}/json/` (função `buscarCep`). Não funciona no preview do claude.ai (sandbox bloqueia chamadas externas); deve funcionar rodando localmente.
 
 ## Módulos já construídos

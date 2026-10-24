@@ -14,23 +14,30 @@ Sistema de gestão (mini ERP) para loja de material de construção: clientes, f
 
 Para cadastrar outras pessoas: em *Usuários* do sistema (papel e acesso) **e** em *Authentication → Users* do Supabase (senha), com o mesmo e-mail.
 
-## Publicar no GitHub Pages
+## Publicar (recomendado: Cloudflare Pages + domínio próprio)
 
-O workflow `.github/workflows/publicar.yml` confere (lint + testes do banco), gera o site e publica a cada push em `main` (ou na branch `claude/sistema-gestao-material-ufgbsc`). Configuração, uma vez só, no GitHub (repositório → *Settings*):
+Por que não o GitHub Pages: ele não permite configurar cabeçalhos de segurança (CSP, HSTS), não oferece proteção contra ataques e, com repositório privado, só funciona em plano pago. O Cloudflare Pages é gratuito, aceita uso comercial e repositório privado, dá HTTPS, proteção contra DDoS e lê o arquivo `public/_headers` (política de segurança já pronta).
 
-1. **Branches** → *Default branch*: se o código ainda estiver na branch `claude/…`, troque a padrão para ela (ou faça o merge para a `main`). O Pages só aceita publicar a partir da branch padrão.
-2. **Secrets and variables → Actions → aba Variables → New repository variable** (duas):
-   - `VITE_SUPABASE_URL` = a URL do projeto (`https://….supabase.co`)
-   - `VITE_SUPABASE_PUBLISHABLE_KEY` = a chave `sb_publishable_…`
-3. **Pages** → *Build and deployment* → *Source*: **GitHub Actions**.
-4. Aba **Actions** → *Publicar no GitHub Pages* → **Run workflow**. Em ~2 minutos o endereço aparece no fim da execução: `https://<usuario>.github.io/material-construcao-new/`.
-5. No Supabase: *Authentication → URL Configuration* → *Site URL* = esse endereço.
+1. Em **dash.cloudflare.com** crie a conta → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → autorize o GitHub (pode limitar a este repositório; funciona com repositório privado).
+2. Escolha o repositório e a branch de produção (a que tem o código).
+3. Build: *Framework preset* **Vite** (ou None), *Build command* `npm run build`, *Output directory* `dist`.
+4. *Environment variables*: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (mesmos valores do `.env.local`) e `NODE_VERSION` = `22`.
+5. *Save and Deploy*. O endereço sai como `https://<projeto>.pages.dev`.
+6. Domínio próprio: no projeto, *Custom domains → Set up a custom domain* e siga as instruções de DNS.
+7. No Supabase: *Authentication → URL Configuration* → *Site URL* = o endereço final.
 
-**Domínio próprio (opcional):** compre o domínio, em *Settings → Pages → Custom domain* informe-o, crie no provedor do domínio o registro DNS que o GitHub indicar (para `sistema.suaLoja.com.br`, um CNAME apontando para `<usuario>.github.io`) e marque *Enforce HTTPS*. Depois crie a variável de Actions `VITE_BASE` com o valor `/` (o site passa a ficar na raiz), rode o workflow de novo e atualize o *Site URL* no Supabase.
+Os nomes dos menus mudam de tempos em tempos; a ideia é sempre essa. A cada push na branch de produção o site é republicado. O workflow `.github/workflows/conferir.yml` roda lint, testes do banco e build em cada push/pull request (não publica).
 
-Atenção: o repositório é público, então o código e a estrutura do banco ficam visíveis; os dados não, porque dependem de login. Nunca coloque chaves `secret`/`service_role` no repositório.
+## Checklist de segurança antes de usar de verdade
 
-## Publicar em outros serviços (Vercel, Netlify, Cloudflare Pages)
+- [ ] Repositório **privado** (GitHub → *Settings → General → Danger Zone → Change visibility*).
+- [ ] Supabase: *Allow new users to sign up* **desligado** e confirmação de e-mail **ligada**.
+- [ ] Senhas fortes e MFA para os administradores (*Authentication → Multi-Factor*).
+- [ ] Supabase em plano pago (Pro) quando a loja operar de verdade: sem pausa por inatividade e com backup diário.
+- [ ] Ninguém além de administradores com permissão de editar *Usuários*.
+- [ ] Nenhuma chave `secret`/`service_role` no código, no `.env` versionado ou em variáveis de build.
+
+## Outras hospedagens (Vercel, Netlify)
 
 Serviços como Vercel, Netlify ou Cloudflare Pages (planos gratuitos) pegam o código do GitHub, rodam `npm run build` e publicam a pasta `dist`. Exemplo na Vercel:
 
