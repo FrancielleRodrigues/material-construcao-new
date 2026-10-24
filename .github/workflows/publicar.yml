@@ -1,0 +1,56 @@
+# Publica o sistema no GitHub Pages a cada push na branch principal.
+# Configuração (uma vez): README.md → "Publicar no GitHub Pages".
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main, claude/sistema-gestao-material-ufgbsc]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    env:
+      # O site fica em https://<usuario>.github.io/<repositorio>/
+      VITE_BASE: /${{ github.event.repository.name }}/
+      # Valores públicos (chave "publishable"), cadastrados em Settings → Secrets and variables → Actions → Variables.
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Conferir variáveis do Supabase
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Cadastre VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY em Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:db
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

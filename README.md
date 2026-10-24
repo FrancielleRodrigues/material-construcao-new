@@ -14,7 +14,21 @@ Sistema de gestão (mini ERP) para loja de material de construção: clientes, f
 
 Para cadastrar outras pessoas: em *Usuários* do sistema (papel e acesso) **e** em *Authentication → Users* do Supabase (senha), com o mesmo e-mail.
 
-## Publicar na internet (sem instalar nada no computador)
+## Publicar no GitHub Pages
+
+O workflow `.github/workflows/publicar.yml` confere (lint + testes do banco), gera o site e publica a cada push em `main` (ou na branch `claude/sistema-gestao-material-ufgbsc`). Configuração, uma vez só, no GitHub (repositório → *Settings*):
+
+1. **Branches** → *Default branch*: se o código ainda estiver na branch `claude/…`, troque a padrão para ela (ou faça o merge para a `main`). O Pages só aceita publicar a partir da branch padrão.
+2. **Secrets and variables → Actions → aba Variables → New repository variable** (duas):
+   - `VITE_SUPABASE_URL` = a URL do projeto (`https://….supabase.co`)
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` = a chave `sb_publishable_…`
+3. **Pages** → *Build and deployment* → *Source*: **GitHub Actions**.
+4. Aba **Actions** → *Publicar no GitHub Pages* → **Run workflow**. Em ~2 minutos o endereço aparece no fim da execução: `https://<usuario>.github.io/material-construcao-new/`.
+5. No Supabase: *Authentication → URL Configuration* → *Site URL* = esse endereço.
+
+Atenção: o repositório é público, então o código e a estrutura do banco ficam visíveis; os dados não, porque dependem de login. Nunca coloque chaves `secret`/`service_role` no repositório.
+
+## Publicar em outros serviços (Vercel, Netlify, Cloudflare Pages)
 
 Serviços como Vercel, Netlify ou Cloudflare Pages (planos gratuitos) pegam o código do GitHub, rodam `npm run build` e publicam a pasta `dist`. Exemplo na Vercel:
 
