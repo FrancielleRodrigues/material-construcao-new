@@ -26,6 +26,8 @@ O workflow `.github/workflows/publicar.yml` confere (lint + testes do banco), ge
 4. Aba **Actions** → *Publicar no GitHub Pages* → **Run workflow**. Em ~2 minutos o endereço aparece no fim da execução: `https://<usuario>.github.io/material-construcao-new/`.
 5. No Supabase: *Authentication → URL Configuration* → *Site URL* = esse endereço.
 
+**Domínio próprio (opcional):** compre o domínio, em *Settings → Pages → Custom domain* informe-o, crie no provedor do domínio o registro DNS que o GitHub indicar (para `sistema.suaLoja.com.br`, um CNAME apontando para `<usuario>.github.io`) e marque *Enforce HTTPS*. Depois crie a variável de Actions `VITE_BASE` com o valor `/` (o site passa a ficar na raiz), rode o workflow de novo e atualize o *Site URL* no Supabase.
+
 Atenção: o repositório é público, então o código e a estrutura do banco ficam visíveis; os dados não, porque dependem de login. Nunca coloque chaves `secret`/`service_role` no repositório.
 
 ## Publicar em outros serviços (Vercel, Netlify, Cloudflare Pages)

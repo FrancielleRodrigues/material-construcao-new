@@ -20,8 +20,9 @@ jobs:
   construir:
     runs-on: ubuntu-latest
     env:
-      # O site fica em https://<usuario>.github.io/<repositorio>/
-      VITE_BASE: /${{ github.event.repository.name }}/
+      # Sem domínio próprio o site fica em https://<usuario>.github.io/<repositorio>/.
+      # Com domínio próprio (servido na raiz), crie a variável VITE_BASE com o valor /
+      VITE_BASE: ${{ vars.VITE_BASE || format('/{0}/', github.event.repository.name) }}
       # Valores públicos (chave "publishable"), cadastrados em Settings → Secrets and variables → Actions → Variables.
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
