@@ -14,6 +14,17 @@ Sistema de gestão (mini ERP) para loja de material de construção: clientes, f
 
 Para cadastrar outras pessoas: em *Usuários* do sistema (papel e acesso) **e** em *Authentication → Users* do Supabase (senha), com o mesmo e-mail.
 
+## Publicar na internet (sem instalar nada no computador)
+
+Serviços como Vercel, Netlify ou Cloudflare Pages (planos gratuitos) pegam o código do GitHub, rodam `npm run build` e publicam a pasta `dist`. Exemplo na Vercel:
+
+1. Entre em vercel.com com a conta do GitHub → *Add New → Project* → escolha este repositório.
+2. Em *Environment Variables*, crie `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (os mesmos valores do `.env.local`).
+3. Se o código estiver numa branch que não é a `main`, em *Settings → Git → Production Branch* informe o nome dela.
+4. *Deploy*. A Vercel entrega um endereço `https://….vercel.app` para abrir em qualquer navegador.
+
+Depois, no Supabase: *Authentication → URL Configuration* → coloque esse endereço em *Site URL* (necessário para links de e-mail).
+
 ## Comandos
 
 | Comando | O que faz |
