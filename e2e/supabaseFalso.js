@@ -12,22 +12,29 @@ export const supabaseConfigurado = true;
 const STUB = `
   create role anon nologin; create role authenticated nologin;
   create schema auth;
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text, email_confirmed_at timestamptz);
   create function auth.jwt() returns jsonb language sql stable as $$
     select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+  create function auth.uid() returns uuid language sql stable as $$
+    select nullif(coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', ''), '')::uuid $$;
   grant usage on schema public, auth to anon, authenticated;
-  grant execute on function auth.jwt() to anon, authenticated;
+  grant execute on function auth.jwt(), auth.uid() to anon, authenticated;
 `;
 
 const PARSERS = { 20: (v) => Number(v), 1700: (v) => Number(v), 1082: (v) => v, 1114: (v) => v, 1184: (v) => v };
 const SENHA = "senha123";
 
 let emailAtual = null; // usuário logado (JWT simulado)
+let uidAtual = null;
 const ouvintes = new Set();
 const pronto = (async () => {
   const db = new PGlite();
   await db.exec(STUB);
   await db.exec(migracao);
   await db.exec(semente);
+  // logins confirmados dos usuários de teste (o gatilho liga cada um ao seu cadastro)
+  await db.exec(`insert into auth.users (email, email_confirmed_at)
+    select email, now() from public.usuarios`);
   return db;
 })();
 window.__db = pronto; // para os testes inspecionarem o banco
@@ -36,7 +43,7 @@ const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
 
 async function executar(sql, params = []) {
   const db = await pronto;
-  const claims = JSON.stringify(emailAtual ? { email: emailAtual, role: "authenticated" } : {});
+  const claims = JSON.stringify(emailAtual ? { email: emailAtual, sub: uidAtual, role: "authenticated" } : {});
   await db.exec(`reset role; select set_config('request.jwt.claims', '${claims.replace(/'/g, "''")}', false); set role ${emailAtual ? "authenticated" : "anon"};`);
   try {
     return await db.query(sql, params, { parsers: PARSERS });
@@ -122,7 +129,7 @@ export const supabase = {
 
   auth: {
     async getSession() {
-      return { data: { session: emailAtual ? { user: { id: emailAtual, email: emailAtual } } : null } };
+      return { data: { session: emailAtual ? { user: { id: uidAtual, email: emailAtual } } : null } };
     },
     onAuthStateChange(cb) {
       ouvintes.add(cb);
@@ -131,12 +138,18 @@ export const supabase = {
     async signInWithPassword({ email, password }) {
       await pronto;
       if (password !== SENHA) return { error: { message: "Invalid login credentials" } };
+      const db = await pronto;
+      // e-mail sem cadastro no sistema também consegue logar (cria o login): deve cair em "Sem acesso"
+      let r = await db.query("select id from auth.users where lower(email) = lower($1)", [email]);
+      if (!r.rows.length) r = await db.query("insert into auth.users (email, email_confirmed_at) values ($1, now()) returning id", [email]);
       emailAtual = email;
-      ouvintes.forEach((cb) => cb("SIGNED_IN", { user: { id: email, email } }));
+      uidAtual = r.rows[0].id;
+      ouvintes.forEach((cb) => cb("SIGNED_IN", { user: { id: uidAtual, email } }));
       return { error: null };
     },
     async signOut() {
       emailAtual = null;
+      uidAtual = null;
       ouvintes.forEach((cb) => cb("SIGNED_OUT", null));
       return { error: null };
     },

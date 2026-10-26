@@ -276,6 +276,24 @@ test("Exclusão: pede confirmação, mantém o histórico e explica quando o ban
   assert.equal((await num(p, "select count(*)::int n from produtos where id = 1")).n, 1);
 });
 
+test("Auditoria: administrador vê quem alterou o quê; vendedor não vê a aba", async () => {
+  const p = await logar();
+  await aba(p, "Produtos");
+  await p.locator("main tr").filter({ hasText: "Torneira de parede" }).locator("button").first().click();
+  await p.getByPlaceholder("0,00").fill("99.9");
+  await p.getByRole("button", { name: "Salvar" }).click();
+  await p.waitForFunction(async () => (await (await window.__db).query("select preco::float p from produtos where id = 5")).rows[0].p === 99.9);
+
+  await aba(p, "Usuários");
+  await p.locator("main").getByRole("button", { name: /Auditoria/ }).click();
+  const linha = p.locator("main").getByText(/Admin Teste alterou produto nº 5/);
+  await linha.waitFor({ timeout: 15000 });
+  await p.locator("main").getByText(/preco: 89.9 → 99.9/).waitFor();
+
+  const v = await logar("vendedor@teste.com");
+  assert.equal(await v.locator("nav").getByText("Usuários").count(), 0);
+});
+
 test("layout de celular: login e dashboard sem erro", async () => {
   const p = await logar("admin@teste.com", 390);
   await p.getByText("Clientes cadastrados").waitFor();

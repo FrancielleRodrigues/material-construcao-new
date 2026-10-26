@@ -84,7 +84,13 @@ const CARREGADORES = {
   },
 };
 
-export const TODAS_AS_LISTAS = Object.keys(CARREGADORES);
+// Auditoria só é carregada quando a aba é aberta (e só administradores recebem linhas).
+CARREGADORES.auditoria = async () => {
+  const linhas = await chamar(supabase.from("auditoria").select("*").order("id", { ascending: false }).range(0, 299));
+  return linhas.map(M.auditoria.de);
+};
+
+export const TODAS_AS_LISTAS = Object.keys(CARREGADORES).filter((n) => n !== "auditoria");
 
 // carregar(["clientes", "produtos"]) → { clientes: [...], produtos: [...] }
 export async function carregar(nomes) {

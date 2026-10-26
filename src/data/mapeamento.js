@@ -96,8 +96,15 @@ export const empresaFiscal = {
 };
 
 export const usuarios = {
-  de: (r) => ({ id: r.id, nome: r.nome, email: r.email, papelId: r.papel_id, ativo: r.ativo }),
+  de: (r) => ({ id: r.id, authId: r.auth_id, nome: r.nome, email: r.email, papelId: r.papel_id, ativo: r.ativo }),
   para: (u) => ({ nome: u.nome.trim(), email: u.email.trim(), papel_id: u.papelId, ativo: Boolean(u.ativo) }),
+};
+
+export const auditoria = {
+  de: (r) => ({
+    id: r.id, quando: r.quando, quem: r.quem, tabela: r.tabela, operacao: r.operacao,
+    registroId: r.registro_id, antes: r.antes, depois: r.depois,
+  }),
 };
 
 export const papeis = {

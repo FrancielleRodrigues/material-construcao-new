@@ -10,7 +10,7 @@ function Autenticado() {
   if (carregando) return <TelaAviso titulo="Carregando..." />;
   if (!sessao) return <LoginScreen onEntrar={entrar} />;
   // key: trocar de usuário descarta todo o estado do usuário anterior.
-  return <Sistema key={sessao.user.id} email={sessao.user.email} onSair={sair} />;
+  return <Sistema key={sessao.user.id} userId={sessao.user.id} email={sessao.user.email} onSair={sair} />;
 }
 
 export default function App() {

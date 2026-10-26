@@ -1,9 +1,35 @@
-import { Lock, UserCog, Plus, Pencil, Trash2 } from "lucide-react";
+import { Lock, UserCog, Plus, Pencil, Trash2, ScrollText } from "lucide-react";
 import { cn, iniciais } from "../../utils/format";
 import { MODULOS_PERMISSAO } from "../../data/constantes";
 
+const ROTULO_TABELA = {
+  produtos: "Produto", clientes: "Cliente", fornecedores: "Fornecedor", lancamentos: "Lançamento",
+  entregas: "Entrega", pedidos_compra: "Pedido de compra", usuarios: "Usuário", papeis: "Papel",
+  empresa_fiscal: "Configuração fiscal",
+};
+const ROTULO_OPERACAO = { INSERT: "Criou", UPDATE: "Alterou", DELETE: "Excluiu" };
+
+function textoValor(v) {
+  if (v === null || v === undefined || v === "") return "vazio";
+  if (typeof v === "object") return "…";
+  return String(v);
+}
+
+// Resumo de uma linha: o que mudou (UPDATE) ou qual registro (INSERT/DELETE).
+function resumoAuditoria(a) {
+  if (a.operacao === "UPDATE") {
+    const campos = Object.keys(a.depois || {});
+    const itens = campos.slice(0, 3).map((c) => `${c.replace(/_/g, " ")}: ${textoValor(a.antes?.[c])} → ${textoValor(a.depois[c])}`);
+    return itens.join(" · ") + (campos.length > 3 ? ` · +${campos.length - 3}` : "");
+  }
+  const r = (a.operacao === "INSERT" ? a.depois : a.antes) || {};
+  return r.nome || r.descricao || (r.numero ? `nº ${r.numero}` : "") || "";
+}
+
 export function UsuariosView({
   barraBusca,
+  auditoria,
+  podeAuditar,
   papeis,
   papeisPorId,
   setConfirmacao,
@@ -21,14 +47,15 @@ export function UsuariosView({
         <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3.5">
           <Lock size={16} className="text-stone-400 shrink-0 mt-0.5" />
           <p className="text-sm text-stone-600">
-            Isso controla o que cada papel <strong>vê e pode editar dentro do sistema</strong>. Importante: essa é uma organização no nível da interface — a segurança de verdade (impedir alguém de burlar isso) só existe quando houver um backend validando cada ação. Use o seletor de sessão no rodapé do menu lateral pra testar como fica pra cada papel.
+            Isso controla o que cada papel <strong>vê e pode editar</strong>. As permissões são conferidas no banco de dados a cada ação, então esconder um menu não é a única barreira. Use com cuidado a permissão de editar Usuários: quem a tem pode dar acesso a si mesmo.
           </p>
         </div>
 
-        <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-xs">
+        <div className="flex gap-2 p-1 bg-stone-100 rounded-lg max-w-md">
           {[
             { id: "usuarios", label: "Usuários", icon: UserCog },
             { id: "papeis", label: "Papéis", icon: Lock },
+            ...(podeAuditar ? [{ id: "auditoria", label: "Auditoria", icon: ScrollText }] : []),
           ].map((s) => (
             <button
               key={s.id}
@@ -86,6 +113,35 @@ export function UsuariosView({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {subUsuarios === "auditoria" && podeAuditar && (
+          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+            <p className="text-xs text-stone-500 px-4 py-3 border-b border-stone-100">
+              Últimas 300 alterações em cadastros, financeiro, entregas, compras e usuários. O estoque tem histórico próprio em Estoque → Histórico.
+            </p>
+            {auditoria.length === 0 ? (
+              <p className="text-sm text-stone-400 p-6 text-center">Nenhuma alteração registrada ainda.</p>
+            ) : (
+              <div className="divide-y divide-stone-100">
+                {auditoria.map((a) => (
+                  <div key={a.id} className="px-4 py-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-sm text-stone-800 min-w-0">
+                        <strong>{a.quem}</strong> {ROTULO_OPERACAO[a.operacao].toLowerCase()}{" "}
+                        {(ROTULO_TABELA[a.tabela] || a.tabela).toLowerCase()}
+                        {a.registroId && a.tabela !== "empresa_fiscal" ? ` nº ${a.registroId}` : ""}
+                      </p>
+                      <time className="text-xs text-stone-400 shrink-0">
+                        {new Date(a.quando).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                      </time>
+                    </div>
+                    {resumoAuditoria(a) && <p className="text-xs text-stone-500 mt-0.5 break-words">{resumoAuditoria(a)}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

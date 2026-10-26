@@ -31,7 +31,7 @@ import { FiscalView } from "./modules/fiscal/FiscalView";
 import { UsuariosView } from "./modules/usuarios/UsuariosView";
 import { EntregaForm } from "./modules/entregas/EntregaForm";
 
-export default function Sistema({ email, onSair }) {
+export default function Sistema({ userId, email, onSair }) {
   const [aba, setAba] = useState("inicio");
   const [clientes, setClientes] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
@@ -39,6 +39,7 @@ export default function Sistema({ email, onSair }) {
   const [formPedido, setFormPedido] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [papeis, setPapeis] = useState([]);
+  const [auditoria, setAuditoria] = useState([]);
   const [formUsuario, setFormUsuario] = useState(null);
   const [formPapel, setFormPapel] = useState(null);
   const [subUsuarios, setSubUsuarios] = useState("usuarios");
@@ -93,7 +94,7 @@ export default function Sistema({ email, onSair }) {
   const SETTERS = {
     clientes: setClientes, fornecedores: setFornecedores, produtos: setProdutos, movimentacoes: setMovimentacoes,
     lancamentos: setLancamentos, pedidos: setPedidos, vendas: setVendas, entregas: setEntregas,
-    notasFiscais: setNotasFiscais, usuarios: setUsuarios, papeis: setPapeis,
+    notasFiscais: setNotasFiscais, usuarios: setUsuarios, papeis: setPapeis, auditoria: setAuditoria,
     // sem acesso ao módulo fiscal o banco devolve vazio: mantém o padrão
     empresaFiscal: (v) => v && setEmpresaFiscal(v),
   };
@@ -115,6 +116,12 @@ export default function Sistema({ email, onSair }) {
   useEffect(() => {
     carregarTudo();
   }, []);
+
+  useEffect(() => {
+    if (aba === "usuarios" && subUsuarios === "auditoria") {
+      recarregar(["auditoria"]).catch((e) => setErro(e.message || "Não foi possível carregar a auditoria."));
+    }
+  }, [aba, subUsuarios]);
 
   // Executa uma ação no servidor: ignora clique duplo, mostra o erro e recarrega o que mudou.
   // Devolve { valor, dados } em caso de sucesso e null em caso de erro (o formulário continua aberto).
@@ -167,7 +174,8 @@ export default function Sistema({ email, onSair }) {
     () => Object.fromEntries(papeis.map((p) => [p.id, p])),
     [papeis]
   );
-  const usuarioAtual = usuarios.find((u) => u.email.toLowerCase() === (email || "").toLowerCase());
+  // O acesso é decidido no banco pelo uid do login (auth.uid()); o e-mail é só rótulo.
+  const usuarioAtual = usuarios.find((u) => u.authId === userId);
   const papelAtual = usuarioAtual ? papeisPorId[usuarioAtual.papelId] : null;
   const nivelPermissao = (moduloId) => papelAtual?.permissoes?.[moduloId] || "nenhum";
   const podeVer = (moduloId) => nivelPermissao(moduloId) !== "nenhum";
@@ -943,7 +951,8 @@ export default function Sistema({ email, onSair }) {
               subUsuarios={subUsuarios}
               usuarioLogadoId={usuarioAtual.id}
               usuarios={usuarios}
-              barraBusca={barraBusca}
+              auditoria={auditoria}
+              podeAuditar={podeEditar("usuarios")}
             />
           )}
         </main>

@@ -17,17 +17,27 @@ const migracao = fs.readdirSync(pastaMigracoes).filter((f) => f.endsWith(".sql")
 const STUB = `
   create role anon nologin; create role authenticated nologin;
   create schema auth;
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text, email_confirmed_at timestamptz);
   create function auth.jwt() returns jsonb language sql stable as $$
     select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+  create function auth.uid() returns uuid language sql stable as $$
+    select nullif(coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', ''), '')::uuid $$;
   grant usage on schema public, auth to anon, authenticated;
-  grant execute on function auth.jwt() to anon, authenticated;
+  grant execute on function auth.jwt(), auth.uid() to anon, authenticated;
 `;
 
 const db = new PGlite();
 
-async function como(email, fn, role = "authenticated") {
-  await db.exec(`reset role; select set_config('request.jwt.claims', '${JSON.stringify({ email })}', false); set role ${role};`);
+// Simula um JWT do Supabase: o login é reconhecido pelo `sub` (auth.uid()), não pelo e-mail.
+async function comJwt(claims, fn, role = "authenticated") {
+  await db.exec(`reset role; select set_config('request.jwt.claims', '${JSON.stringify(claims).replace(/'/g, "''")}', false); set role ${role};`);
   try { return await fn(); } finally { await db.exec("reset role;"); }
+}
+async function como(email, fn, role = "authenticated") {
+  const r = await db.query("select id from auth.users where lower(email) = lower($1)", [email]);
+  // e-mail sem login cadastrado: usa um uid qualquer (que não está ligado a nenhum usuário)
+  const sub = r.rows[0]?.id ?? "00000000-0000-0000-0000-00000000dead";
+  return comJwt({ email, sub, role: "authenticated" }, fn, role);
 }
 const q = async (sql, params) => (await db.query(sql, params)).rows;
 const erro = async (promessa, trecho) => {
@@ -46,6 +56,9 @@ before(async () => {
       ('Caixa', 'caixa@x.com', 'caixa', true),
       ('Leitor', 'leitor@x.com', 'leitor', true),
       ('Inativo', 'inativo@x.com', 'admin', false);
+    insert into auth.users (email, email_confirmed_at) values
+      ('admin@x.com', now()), ('vend@x.com', now()), ('caixa@x.com', now()),
+      ('leitor@x.com', now()), ('inativo@x.com', now());
   `);
   await como("admin@x.com", async () => {
     await q(`insert into fornecedores (tipo, nome, documento) values ('PJ', 'Votoran', '45.678.912/0001-33')`);
@@ -67,8 +80,58 @@ test("anon e usuário desconhecido/inativo não enxergam nada", async () => {
   await erro(como("ninguem@x.com", () => q(`insert into clientes (tipo, nome, documento) values ('PF','Hack','111.111.111-11')`)), "row-level security");
 });
 
-test("e-mail do JWT é comparado sem diferenciar maiúsculas", async () => {
-  assert.equal((await como("ADMIN@X.com", () => q("select * from clientes"))).length, 1);
+test("acesso é pelo auth.uid(): o e-mail dentro do JWT não vale nada sozinho", async () => {
+  const uidAdmin = (await q("select id from auth.users where email = 'admin@x.com'"))[0].id;
+  assert.equal((await q("select count(*)::int n from usuarios where auth_id = $1 and email = 'admin@x.com'", [uidAdmin]))[0].n, 1, "gatilho ligou o login ao usuário");
+  // com o uid certo o e-mail escrito no JWT é irrelevante
+  assert.equal((await comJwt({ email: "qualquer@coisa.com", sub: uidAdmin }, () => q("select * from clientes"))).length, 1);
+  // JWT com o e-mail do administrador, mas outro uid: não enxerga nada
+  const falso = { email: "admin@x.com", sub: "11111111-1111-1111-1111-111111111111" };
+  assert.equal((await comJwt(falso, () => q("select * from clientes"))).length, 0);
+  assert.equal((await comJwt(falso, () => q("select * from usuarios"))).length, 0);
+  await erro(comJwt(falso, () => q(`insert into clientes (tipo, nome, documento) values ('PF','Hack','222.222.222-22')`)), "row-level security");
+  await erro(comJwt(falso, () => q("select finalizar_venda(null, 'pix', '[{\"produto_id\":2,\"quantidade\":1}]'::jsonb)")), "permiss");
+});
+
+test("vínculo do login: só e-mail confirmado liga, nos dois sentidos, e trocar o e-mail do login não muda o acesso", async () => {
+  // usuário cadastrado antes do login
+  await q("insert into usuarios (nome, email, papel_id) values ('Novo', 'novo@x.com', 'vendedor')");
+  assert.equal((await q("select auth_id from usuarios where email = 'novo@x.com'"))[0].auth_id, null);
+  const [{ id: uid }] = await q("insert into auth.users (email) values ('novo@x.com') returning id"); // sem confirmar
+  assert.equal((await q("select auth_id from usuarios where email = 'novo@x.com'"))[0].auth_id, null, "login não confirmado não liga");
+  assert.equal((await comJwt({ email: "novo@x.com", sub: uid }, () => q("select * from clientes"))).length, 0);
+  await q("update auth.users set email_confirmed_at = now() where id = $1", [uid]);
+  assert.equal((await q("select auth_id from usuarios where email = 'novo@x.com'"))[0].auth_id, uid, "confirmar liga");
+  assert.equal((await comJwt({ email: "novo@x.com", sub: uid }, () => q("select * from clientes"))).length, 1);
+  // trocar o e-mail do login não tira nem dá acesso: vale o uid
+  await q("update auth.users set email = 'trocado@x.com' where id = $1", [uid]);
+  assert.equal((await comJwt({ email: "trocado@x.com", sub: uid }, () => q("select * from clientes"))).length, 1);
+
+  // login confirmado antes do cadastro do usuário (feito por um administrador, pela API)
+  const [{ id: uid2 }] = await q("insert into auth.users (email, email_confirmed_at) values ('outro@x.com', now()) returning id");
+  await como("admin@x.com", () => q("insert into usuarios (nome, email, papel_id) values ('Outro', 'outro@x.com', 'caixa')"));
+  assert.equal((await q("select auth_id from usuarios where email = 'outro@x.com'"))[0].auth_id, uid2);
+  await q("delete from usuarios where email in ('novo@x.com', 'outro@x.com')");
+  await q("delete from auth.users where id in ($1, $2)", [uid, uid2]);
+});
+
+test("auth_id não pode ser escrito pela API (nem por administrador)", async () => {
+  await como("admin@x.com", async () => {
+    await erro(q("update usuarios set auth_id = gen_random_uuid() where email = 'vend@x.com'"), "permission denied");
+    await erro(q("insert into usuarios (nome, email, papel_id, auth_id) values ('X','x@x.com','caixa', gen_random_uuid())"), "permission denied");
+  });
+});
+
+test("só as funções de negócio ficam expostas na API; as de permissão ficam no schema privado", async () => {
+  assert.equal((await q("select to_regprocedure('public.nivel(text)') as f"))[0].f, null);
+  assert.equal((await q("select to_regprocedure('public.pode_editar(text)') as f"))[0].f, null);
+  assert.equal((await q("select has_schema_privilege('anon', 'private', 'usage') as u"))[0].u, false);
+  const expostas = await q(`select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prokind = 'f' and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute')
+    order by 1`);
+  assert.deepEqual(expostas.map((r) => r.proname), ["finalizar_venda", "gerar_rascunho_nota", "registrar_movimentacao", "registrar_recebimento", "salvar_pedido_compra"]);
+  assert.equal((await q(`select count(*)::int n from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute')`))[0].n, 0);
 });
 
 test("vendedor: lê clientes/produtos, não lê financeiro, não cria produto", async () => {
@@ -307,4 +370,39 @@ test("empresa_fiscal: só quem edita fiscal altera", async () => {
     await q("update empresa_fiscal set cnpj = '12.345.678/0001-90', razao_social = 'Loja' where id = 1");
     assert.equal((await q("select cnpj from empresa_fiscal"))[0].cnpj, "12.345.678/0001-90");
   });
+});
+
+test("auditoria: registra quem mudou o quê (só colunas alteradas), ignora estoque e só administrador lê", async () => {
+  const total = async (filtro) => (await q(`select count(*)::int n from auditoria where ${filtro}`))[0].n;
+  await como("admin@x.com", async () => {
+    await q("update produtos set preco = 40 where id = 2");
+  });
+  const [a] = await q("select quem, tabela, operacao, registro_id, antes, depois from auditoria where tabela = 'produtos' and operacao = 'UPDATE' order by id desc limit 1");
+  assert.equal(a.quem, "Admin");
+  assert.equal(a.registro_id, "2");
+  assert.deepEqual(a.antes, { preco: 89.9 });
+  assert.deepEqual(a.depois, { preco: 40 });
+
+  // mudança só de estoque (venda, movimentação, ajuste) não polui a auditoria
+  const antes = await total("tabela = 'produtos'");
+  await como("admin@x.com", () => q("select registrar_movimentacao(2, 'entrada', 3, 'ajuste')"));
+  await como("vend@x.com", () => q(`select finalizar_venda(null, 'pix', '[{"produto_id":2,"quantidade":1}]'::jsonb)`));
+  await como("admin@x.com", () => q("update produtos set estoque = estoque + 1 where id = 2"));
+  assert.equal(await total("tabela = 'produtos'"), antes);
+
+  // inclusão e exclusão
+  await como("vend@x.com", () => q(`insert into clientes (tipo, nome, documento) values ('PF','Auditado','555.555.555-55')`));
+  const [c] = await q("select quem, operacao, depois->>'nome' as nome from auditoria where tabela = 'clientes' order by id desc limit 1");
+  assert.deepEqual(c, { quem: "Vendedor", operacao: "INSERT", nome: "Auditado" });
+  await como("admin@x.com", () => q("delete from clientes where nome = 'Auditado'"));
+  const [d] = await q("select operacao, antes->>'nome' as nome from auditoria where tabela = 'clientes' order by id desc limit 1");
+  assert.deepEqual(d, { operacao: "DELETE", nome: "Auditado" });
+
+  // leitura: só quem edita Usuários; ninguém grava
+  assert.ok((await como("admin@x.com", () => q("select * from auditoria"))).length > 0);
+  assert.equal((await como("vend@x.com", () => q("select * from auditoria"))).length, 0);
+  assert.equal((await como("caixa@x.com", () => q("select * from auditoria"))).length, 0);
+  await erro(como("admin@x.com", () => q("insert into auditoria (quem, tabela, operacao) values ('x','x','INSERT')")), "permission denied");
+  await erro(como("admin@x.com", () => q("update auditoria set quem = 'apagado'")), "permission denied");
+  await erro(como("admin@x.com", () => q("delete from auditoria")), "permission denied");
 });

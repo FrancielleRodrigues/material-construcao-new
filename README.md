@@ -33,6 +33,8 @@ Os nomes dos menus mudam de tempos em tempos; a ideia é sempre essa. A cada pus
 - [ ] Repositório **privado** (GitHub → *Settings → General → Danger Zone → Change visibility*).
 - [ ] Supabase: *Allow new users to sign up* **desligado** e confirmação de e-mail **ligada**.
 - [ ] Senhas fortes e MFA para os administradores (*Authentication → Multi-Factor*).
+- [ ] *Authentication → Sign In / Providers → Password* : ligar "Leaked password protection" (plano Pro) e exigir senha longa.
+- [ ] Nunca adicionar o schema `private` em *Settings → API → Exposed schemas*.
 - [ ] Supabase em plano pago (Pro) quando a loja operar de verdade: sem pausa por inatividade e com backup diário.
 - [ ] Ninguém além de administradores com permissão de editar *Usuários*.
 - [ ] Nenhuma chave `secret`/`service_role` no código, no `.env` versionado ou em variáveis de build.
