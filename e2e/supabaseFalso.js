@@ -8,6 +8,7 @@ const migracao = Object.keys(migracoes).sort().map((k) => migracoes[k]).join("\n
 import semente from "./semente.sql?raw";
 
 export const supabaseConfigurado = true;
+export const variaveisFaltando = [];
 
 const STUB = `
   create role anon nologin; create role authenticated nologin;

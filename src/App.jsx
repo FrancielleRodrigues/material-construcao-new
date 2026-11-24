@@ -1,4 +1,4 @@
-import { supabaseConfigurado } from "./lib/supabase";
+import { supabaseConfigurado, variaveisFaltando } from "./lib/supabase";
 import { useSessao } from "./hooks/useSessao";
 import { entrar, sair } from "./data/api";
 import Sistema from "./Sistema";
@@ -15,13 +15,27 @@ function Autenticado() {
 
 export default function App() {
   if (!supabaseConfigurado) {
+    const code = "text-xs bg-stone-100 px-1 rounded";
     return (
       <TelaAviso titulo="Falta configurar o Supabase" subtitulo="O sistema precisa do endereço e da chave do seu projeto.">
-        <ol className="list-decimal pl-5 text-sm text-stone-600 space-y-1.5">
-          <li>Copie <code className="text-xs bg-stone-100 px-1 rounded">.env.example</code> para <code className="text-xs bg-stone-100 px-1 rounded">.env.local</code>.</li>
-          <li>Preencha <code className="text-xs bg-stone-100 px-1 rounded">VITE_SUPABASE_URL</code> e <code className="text-xs bg-stone-100 px-1 rounded">VITE_SUPABASE_PUBLISHABLE_KEY</code>.</li>
-          <li>Reinicie o <code className="text-xs bg-stone-100 px-1 rounded">npm run dev</code>.</li>
-        </ol>
+        <p className="text-sm text-stone-700 mb-3">
+          Variáveis que não chegaram ao site:{" "}
+          {variaveisFaltando.map((v) => (
+            <code key={v} className={code + " mr-1"}>{v}</code>
+          ))}
+        </p>
+        {import.meta.env.PROD ? (
+          <ol className="list-decimal pl-5 text-sm text-stone-600 space-y-1.5">
+            <li>Na hospedagem (Cloudflare), crie essas variáveis como variáveis de <strong>build</strong>, com o nome exatamente igual.</li>
+            <li>Rode o build de novo (as de execução não servem: o site as lê ao ser construído).</li>
+          </ol>
+        ) : (
+          <ol className="list-decimal pl-5 text-sm text-stone-600 space-y-1.5">
+            <li>Copie <code className={code}>.env.example</code> para <code className={code}>.env.local</code>.</li>
+            <li>Preencha as variáveis acima.</li>
+            <li>Reinicie o <code className={code}>npm run dev</code>.</li>
+          </ol>
+        )}
       </TelaAviso>
     );
   }
