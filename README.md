@@ -16,14 +16,16 @@ Para cadastrar outras pessoas: em *Usuários* do sistema (papel e acesso) **e** 
 
 ## Publicar (recomendado: Cloudflare Pages + domínio próprio)
 
-Por que não o GitHub Pages: ele não permite configurar cabeçalhos de segurança (CSP, HSTS), não oferece proteção contra ataques e, com repositório privado, só funciona em plano pago. O Cloudflare Pages é gratuito, aceita uso comercial e repositório privado, dá HTTPS, proteção contra DDoS e lê o arquivo `public/_headers` (política de segurança já pronta).
+Por que não o GitHub Pages: ele não permite configurar cabeçalhos de segurança (CSP, HSTS), não oferece proteção contra ataques e, com repositório privado, só funciona em plano pago. O Cloudflare (Pages/Workers com arquivos estáticos) é gratuito, aceita uso comercial e repositório privado, dá HTTPS, proteção contra DDoS e lê o arquivo `public/_headers` (política de segurança já pronta).
 
-1. Em **dash.cloudflare.com** crie a conta → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → autorize o GitHub (pode limitar a este repositório; funciona com repositório privado).
-2. Escolha o repositório e a branch de produção (a que tem o código).
-3. Build: *Framework preset* **Vite** (ou None), *Build command* `npm run build`, *Output directory* `dist`.
-4. *Environment variables*: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (mesmos valores do `.env.local`) e `NODE_VERSION` = `22`.
-5. *Save and Deploy*. O endereço sai como `https://<projeto>.pages.dev`.
-6. Domínio próprio: no projeto, *Custom domains → Set up a custom domain* e siga as instruções de DNS.
+1. Em **dash.cloudflare.com** crie a conta → *Workers & Pages* → *Create* → *Import a repository* (ou *Connect to Git*) → autorize o GitHub (pode limitar a este repositório; funciona com repositório privado).
+2. Escolha o repositório e a **branch de produção** (a que tem o código). Dê ao projeto o nome `material-construcao-new` (precisa ser igual ao `name` do arquivo `wrangler.jsonc`).
+3. Configure o build (em *Settings → Build* depois de criado):
+   - *Build command*: `npm run build`
+   - *Deploy command*: `npx wrangler deploy` (padrão; usa o `wrangler.jsonc` do repositório, que publica a pasta `dist`)
+4. Em *Settings → Build → Variables and secrets* (as de **build**, não as de execução), crie: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (mesmos valores do `.env.local`) e `NODE_VERSION` = `22`. As variáveis precisam existir *durante o build*, porque o Vite as embute no site.
+5. Rode o build de novo (*Deployments → Retry*, ou um push). O endereço sai como `https://material-construcao-new.<sua-conta>.workers.dev`.
+6. Domínio próprio: no projeto, *Settings → Domains & Routes → Add → Custom domain*.
 7. No Supabase: *Authentication → URL Configuration* → *Site URL* = o endereço final.
 
 Os nomes dos menus mudam de tempos em tempos; a ideia é sempre essa. A cada push na branch de produção o site é republicado. O workflow `.github/workflows/conferir.yml` roda lint, testes do banco e build em cada push/pull request (não publica).
