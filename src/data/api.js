@@ -21,6 +21,7 @@ function traduzir(error) {
     if (msg.includes("usuarios_email_uniq")) return "Já existe um usuário com este e-mail.";
     return "Já existe um registro com estes dados.";
   }
+  if (code === "23514" && /documento_tamanho/.test(msg)) return "CPF deve ter 11 números e CNPJ, 14.";
   // 23001 = RESTRICT (bloqueio ao excluir), 23503 = chave estrangeira
   if (code === "23001" || code === "23503") {
     if (msg.includes("movimentacoes")) return "Este produto tem movimentações de estoque e não pode ser excluído.";
@@ -191,6 +192,11 @@ export const salvarPedido = (p) =>
     })
   );
 
+// Vínculos "código do fornecedor → produto" gravados nas importações anteriores.
+export const codigosDoFornecedor = async (fornecedorId) =>
+  (await chamar(supabase.from("produtos_codigo_fornecedor").select("codigo, produto_id").eq("fornecedor_id", fornecedorId))).map((r) => ({
+    codigo: r.codigo, produtoId: r.produto_id,
+  }));
 export const importarNotaCompra = (payload) => chamar(supabase.rpc("importar_nota_compra", { p_nota: payload }));
 export const registrarRecebimento = (pedidoId) => chamar(supabase.rpc("registrar_recebimento", { p_pedido_id: pedidoId }));
 

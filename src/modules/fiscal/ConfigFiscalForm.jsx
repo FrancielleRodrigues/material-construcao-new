@@ -5,6 +5,7 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { REGIMES_TRIBUTARIOS, PROVEDORES_NFE } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
 import { inputClasses } from "../../components/ui/inputClasses";
+import { mascararCnpj } from "../../utils/mascaras";
 
 export function ConfigFiscalForm({ inicial, onSalvar }) {
   const [form, setForm] = useState(inicial);
@@ -42,8 +43,10 @@ export function ConfigFiscalForm({ inicial, onSalvar }) {
             <Campo label="CNPJ">
               <input
                 value={form.cnpj}
-                onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                onChange={(e) => setForm({ ...form, cnpj: mascararCnpj(e.target.value) })}
                 className={inputClasses}
+                inputMode="numeric"
+                maxLength={18}
                 placeholder="00.000.000/0000-00"
               />
             </Campo>

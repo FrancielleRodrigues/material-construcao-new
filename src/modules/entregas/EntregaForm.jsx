@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { cn, hojeISO, formatarEndereco } from "../../utils/format";
+import { cn, hojeISO, formatarEndereco, formatarEnderecoEntrega } from "../../utils/format";
+import { mascararCep } from "../../utils/mascaras";
 import { buscarCep } from "../../utils/cep";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { Campo } from "../../components/ui/Campo";
@@ -25,7 +26,7 @@ export function EntregaForm({ inicial, vendas, clientes, clientesPorId, onSalvar
   const [enderecoEncontrado, setEnderecoEncontrado] = useState(null);
 
   async function onCepEntregaChange(valor) {
-    const mascarado = valor.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+    const mascarado = mascararCep(valor);
     setCepEntrega(mascarado);
     if (mascarado.replace(/\D/g, "").length === 8) {
       setStatusCepEntrega("buscando");
@@ -61,7 +62,7 @@ export function EntregaForm({ inicial, vendas, clientes, clientesPorId, onSalvar
       ...form,
       vendaId: venda.id,
       clienteId: venda.clienteId || "",
-      endereco: cliente ? formatarEndereco(cliente.endereco) : form.endereco,
+      endereco: cliente ? formatarEnderecoEntrega(cliente.endereco) : form.endereco,
       itensDescricao: venda.itens.map((i) => `${i.quantidade}x ${i.nome}`).join(", "),
     });
   }
@@ -71,7 +72,7 @@ export function EntregaForm({ inicial, vendas, clientes, clientesPorId, onSalvar
     setForm({
       ...form,
       clienteId,
-      endereco: cliente ? formatarEndereco(cliente.endereco) : "",
+      endereco: cliente ? formatarEnderecoEntrega(cliente.endereco) : "",
     });
   }
 
@@ -129,6 +130,8 @@ export function EntregaForm({ inicial, vendas, clientes, clientesPorId, onSalvar
                 className={inputClasses}
                 placeholder="00000-000"
                 inputMode="numeric"
+                placeholder="00000-000"
+                maxLength={9}
               />
               <div style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)" }}>
                 {statusCepEntrega === "buscando" && <Loader2 size={14} className="text-stone-400 animate-spin" />}
@@ -153,7 +156,7 @@ export function EntregaForm({ inicial, vendas, clientes, clientesPorId, onSalvar
             value={form.endereco}
             onChange={(e) => setForm({ ...form, endereco: e.target.value })}
             className={inputClasses}
-            placeholder="Rua, número - Bairro, Cidade/UF"
+            placeholder="Rua, número - Bairro, Cidade/UF - Ref.: ponto de referência"
           />
         </Campo>
 

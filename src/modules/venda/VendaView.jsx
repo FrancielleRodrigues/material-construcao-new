@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ScanLine, ScanBarcode, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
 import { Campo } from "../../components/ui/Campo";
-import { cn, moeda, formatarEndereco } from "../../utils/format";
+import { cn, moeda, formatarEnderecoEntrega } from "../../utils/format";
+import { mascararDocumento } from "../../utils/mascaras";
 import { inputClasses } from "../../components/ui/inputClasses";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FORMAS_PAGAMENTO } from "../../data/constantes";
@@ -79,9 +80,10 @@ export function VendaView({
               <input
                 autoFocus
                 value={docClienteVenda}
-                onChange={(e) => setDocClienteVenda(e.target.value)}
+                onChange={(e) => setDocClienteVenda(mascararDocumento(e.target.value))}
+                maxLength={18}
                 className={cn(inputClasses, "pl-8")}
-                placeholder="Digite o CPF ou CNPJ"
+                placeholder="Digite o CPF ou CNPJ (só números)"
                 inputMode="numeric"
                 onKeyDown={(e) => { if (e.key === "Enter" && clienteVendaEncontrado) setEtapaVenda("produtos"); }}
               />
@@ -311,7 +313,7 @@ export function VendaView({
                   onClick={() => {
                     setTipoEntregaVenda("entrega");
                     if (!enderecoEntregaVenda && clienteVendaEncontrado) {
-                      setEnderecoEntregaVenda(formatarEndereco(clienteVendaEncontrado.endereco));
+                      setEnderecoEntregaVenda(formatarEnderecoEntrega(clienteVendaEncontrado.endereco));
                     }
                   }}
                   className={cn(
@@ -333,6 +335,8 @@ export function VendaView({
                           className={inputClasses}
                           placeholder="00000-000"
                           inputMode="numeric"
+                          placeholder="00000-000"
+                          maxLength={9}
                         />
                         <div style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)" }}>
                           {statusCepVenda === "buscando" && <Loader2 size={14} className="text-stone-400 animate-spin" />}

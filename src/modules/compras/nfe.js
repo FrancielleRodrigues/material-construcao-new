@@ -199,9 +199,11 @@ export function lerNfe(xml, Analisador = globalThis.DOMParser) {
   };
 }
 
-// Descobre a que produto cadastrado cada item corresponde (ordem: código de barras → SKU igual ao
-// código do fornecedor → mesmo nome). Quem não casa vira "produto novo" (o usuário pode trocar).
-export function conferirNota(nota, { produtos = [], fornecedores = [], cnpjEmpresa = "" } = {}) {
+// Descobre a que produto cadastrado cada item corresponde. Ordem: vínculo já feito com ESTE fornecedor
+// (código dele → produto, gravado numa importação anterior) → código de barras → SKU igual ao código do
+// fornecedor → mesmo nome. Quem não casa vira "produto novo" (o usuário pode trocar).
+// `vinculos`: [{ codigo, produtoId }] do fornecedor da nota.
+export function conferirNota(nota, { produtos = [], fornecedores = [], cnpjEmpresa = "", vinculos = [] } = {}) {
   const norm = (s) => String(s ?? "").trim().toUpperCase();
   const semAcento = (s) => norm(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ");
   const forn = fornecedores.find((f) => soDigitos(f.documento) === nota.fornecedor.documento) || null;
@@ -210,11 +212,13 @@ export function conferirNota(nota, { produtos = [], fornecedores = [], cnpjEmpre
     avisos.push("O destinatário desta nota não é o CNPJ da sua empresa. Confirme se a nota é mesmo sua.");
   }
   const itens = nota.itens.map((item) => {
-    const porBarras = item.codigoBarras && produtos.find((p) => p.codigoBarras && norm(p.codigoBarras) === norm(item.codigoBarras));
-    const porSku = !porBarras && item.codigo && produtos.find((p) => p.sku && norm(p.sku) === norm(item.codigo));
-    const porNome = !porBarras && !porSku && produtos.find((p) => semAcento(p.nome) === semAcento(item.nome));
-    const produto = porBarras || porSku || porNome || null;
-    return { ...item, produtoId: produto ? produto.id : null, casou: porBarras ? "código de barras" : porSku ? "SKU" : porNome ? "nome" : null };
+    const porVinculo = item.codigo && vinculos.find((v) => norm(v.codigo) === norm(item.codigo) && produtos.some((p) => p.id === v.produtoId));
+    const porBarras = !porVinculo && item.codigoBarras && produtos.find((p) => p.codigoBarras && norm(p.codigoBarras) === norm(item.codigoBarras));
+    const porSku = !porVinculo && !porBarras && item.codigo && produtos.find((p) => p.sku && norm(p.sku) === norm(item.codigo));
+    const porNome = !porVinculo && !porBarras && !porSku && produtos.find((p) => semAcento(p.nome) === semAcento(item.nome));
+    const produto = porVinculo ? produtos.find((p) => p.id === porVinculo.produtoId) : porBarras || porSku || porNome || null;
+    const casou = porVinculo ? "código do fornecedor (já importado antes)" : porBarras ? "código de barras" : porSku ? "SKU" : porNome ? "nome" : null;
+    return { ...item, produtoId: produto ? produto.id : null, casou };
   });
   return { ...nota, avisos, fornecedorExistente: forn, itens };
 }
@@ -234,7 +238,8 @@ export function montarPayload(nota, { atualizarCusto = true, categoria = "", aju
     itens: nota.itens.map((i) => {
       const aj = ajustes[i.n] || {};
       const produtoId = aj.produtoId !== undefined ? aj.produtoId : i.produtoId;
-      const base = { nome: i.nome, quantidade: i.quantidade, preco_unitario: i.custoUnitario };
+      // codigo_fornecedor: o banco guarda "código dele = este produto" para as próximas notas
+      const base = { nome: i.nome, quantidade: i.quantidade, preco_unitario: i.custoUnitario, codigo_fornecedor: i.codigo || null };
       if (produtoId) return { ...base, produto_id: Number(produtoId) };
       return {
         ...base,

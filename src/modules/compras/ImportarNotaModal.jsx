@@ -18,7 +18,7 @@ function formatarDocumento(d) {
 
 // Importa o XML de uma NF-e de compra: lê no navegador, mostra uma conferência (fornecedor, itens
 // associados aos produtos, parcelas) e só então grava, tudo de uma vez, pela função do banco.
-export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa, onImportar, onCancelar }) {
+export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa, onImportar, buscarVinculos, onCancelar }) {
   const [nota, setNota] = useState(null); // resultado de conferirNota
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [erro, setErro] = useState("");
@@ -54,7 +54,17 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
         setErro(`Esta nota já foi importada (pedido nº ${jaImportada.numero}). Não é possível importar a mesma nota duas vezes.`);
         return;
       }
-      setNota(conferirNota(resultado.nota, { produtos, fornecedores, cnpjEmpresa }));
+      // fornecedor já cadastrado: usa o que o sistema aprendeu nas notas anteriores dele
+      const fornecedor = fornecedores.find((f) => f.documento.replace(/\D/g, "") === resultado.nota.fornecedor.documento);
+      let vinculos = [];
+      if (fornecedor) {
+        try {
+          vinculos = await buscarVinculos(fornecedor.id);
+        } catch {
+          vinculos = []; // sem os vínculos a conferência continua, só não reconhece pelo código dele
+        }
+      }
+      setNota(conferirNota(resultado.nota, { produtos, fornecedores, cnpjEmpresa, vinculos }));
     } catch {
       setErro("Não foi possível ler o arquivo.");
     } finally {

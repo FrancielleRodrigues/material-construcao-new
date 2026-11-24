@@ -99,7 +99,7 @@ test("payload: produto existente vai por id; novo vai com dados e preço informa
   const p = montarPayload(c, { atualizarCusto: false, categoria: "acabamento", ajustes: { 2: { preco: "9.9" } } });
   assert.equal(p.chave, c.chave);
   assert.equal(p.atualizar_custo, false);
-  assert.deepEqual(p.itens[0], { nome: "Cimento CP-II 50kg", quantidade: 100, preco_unitario: 31, produto_id: 1 });
+  assert.deepEqual(p.itens[0], { nome: "Cimento CP-II 50kg", quantidade: 100, preco_unitario: 31, codigo_fornecedor: "CIM50", produto_id: 1 });
   // o código do fornecedor (REJ1KG) NÃO vira SKU: o SKU é da loja e, em branco, o banco gera
   assert.deepEqual(p.itens[1].novo_produto, { nome: "Rejunte flexível cinza 1kg", unidade: "un", categoria: "acabamento", preco: 9.9, codigo_barras: null, sku: null });
   const comCodigos = montarPayload(c, { ajustes: { 2: { preco: "9.9", sku: " REJ-LOJA ", codigoBarras: "7890000000001" } } });
@@ -131,4 +131,21 @@ test("linhas repetidas do mesmo produto são juntas numa só (quantidade e custo
   assert.equal(n.totalNota, 71.1);
   assert.deepEqual(n.parcelas, [], "sem duplicatas (venda de balcão)");
   assert.equal(n.itens[0].codigoBarras, "", "SEM GTIN não é código de barras");
+});
+
+test("conferir: vínculo gravado numa nota anterior do fornecedor vence os outros critérios", () => {
+  const nota = lerNfe(readFileSync(new URL("../../../e2e/fixtures/nfe-balcao-duplicado.xml", import.meta.url), "utf8"), DOMParser).nota;
+  const prods = [
+    { id: 10, nome: "Rejunte da loja (outro nome)", codigoBarras: "", sku: "" },
+    { id: 11, nome: "REJUNTE RESINADO BEGE 1KG", codigoBarras: "", sku: "" }, // casaria por nome
+  ];
+  const sem = conferirNota(nota, { produtos: prods });
+  assert.deepEqual([sem.itens[0].produtoId, sem.itens[0].casou], [11, "nome"]);
+  const com = conferirNota(nota, { produtos: prods, vinculos: [{ codigo: "1207", produtoId: 10 }] });
+  assert.deepEqual([com.itens[0].produtoId, com.itens[0].casou], [10, "código do fornecedor (já importado antes)"]);
+  // vínculo com produto que não existe mais é ignorado
+  const orfao = conferirNota(nota, { produtos: prods, vinculos: [{ codigo: "1207", produtoId: 999 }] });
+  assert.equal(orfao.itens[0].produtoId, 11);
+  // o código do fornecedor segue no payload para o banco gravar o vínculo
+  assert.equal(montarPayload(com).itens[0].codigo_fornecedor, "1207");
 });

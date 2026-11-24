@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "../../utils/format";
 import { buscarCep } from "../../utils/cep";
+import { mascararDocumento, mascararTelefone, mascararCep, documentoCompleto, telefoneValido } from "../../utils/mascaras";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { IE_OPCOES, ETAPAS_CLIENTE } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
@@ -14,10 +15,11 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
     const base = {
       tipo: "PF", nome: "", documento: "", telefone: "", email: "",
       inscricaoEstadual: "", indicadorIE: "nao_contribuinte",
-      endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
+      endereco: { cep: "", logradouro: "", numero: "", complemento: "", referencia: "", bairro: "", cidade: "", uf: "" },
     };
-    if (!inicial) return base;
-    return { ...base, ...inicial, endereco: { ...base.endereco, ...(inicial.endereco || {}) } };
+    const f = inicial ? { ...base, ...inicial, endereco: { ...base.endereco, ...(inicial.endereco || {}) } } : base;
+    // dados antigos ou digitados sem máscara aparecem já formatados
+    return { ...f, documento: mascararDocumento(f.documento, f.tipo), telefone: mascararTelefone(f.telefone) };
   });
   const [erro, setErro] = useState("");
   const [statusCep, setStatusCep] = useState("idle"); // idle | buscando | encontrado | nao_encontrado
@@ -29,7 +31,7 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
   }
 
   async function onCepChange(valor) {
-    const mascarado = valor.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+    const mascarado = mascararCep(valor);
     setEndereco("cep", mascarado);
     if (mascarado.replace(/\D/g, "").length === 8) {
       setStatusCep("buscando");
@@ -46,8 +48,16 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
   }
 
   function validarEtapaAtual() {
-    if (etapa === 0 && (!form.nome.trim() || !form.documento.trim())) {
-      setErro("Preencha nome e CPF/CNPJ.");
+    if (etapa === 0 && !form.nome.trim()) {
+      setErro("Preencha o nome do cliente.");
+      return false;
+    }
+    if (etapa === 0 && !documentoCompleto(form.documento, form.tipo)) {
+      setErro(form.tipo === "PF" ? "O CPF deve ter 11 números." : "O CNPJ deve ter 14 números.");
+      return false;
+    }
+    if (etapa === 0 && !telefoneValido(form.telefone)) {
+      setErro("O telefone deve ter DDD + 8 ou 9 números.");
       return false;
     }
     if (etapa === 2 && (!form.endereco.cep || !form.endereco.numero.trim())) {
@@ -87,7 +97,7 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
             {["PF", "PJ"].map((t) => (
               <button
                 key={t}
-                onClick={() => setForm({ ...form, tipo: t })}
+                onClick={() => setForm({ ...form, tipo: t, documento: mascararDocumento(form.documento, t) })}
                 className={cn(
                   "flex-1 py-2 rounded-md text-sm font-medium transition-colors",
                   form.tipo === t ? "bg-white text-teal-800 shadow-sm" : "text-stone-500"
@@ -111,8 +121,10 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
           <Campo label={form.tipo === "PF" ? "CPF" : "CNPJ"}>
             <input
               value={form.documento}
-              onChange={(e) => setForm({ ...form, documento: e.target.value })}
+              onChange={(e) => setForm({ ...form, documento: mascararDocumento(e.target.value, form.tipo) })}
               className={inputClasses}
+              inputMode="numeric"
+              maxLength={form.tipo === "PF" ? 14 : 18}
               placeholder={form.tipo === "PF" ? "000.000.000-00" : "00.000.000/0000-00"}
             />
           </Campo>
@@ -121,8 +133,10 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
             <Campo label="Telefone">
               <input
                 value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                onChange={(e) => setForm({ ...form, telefone: mascararTelefone(e.target.value) })}
                 className={inputClasses}
+                inputMode="tel"
+                maxLength={15}
                 placeholder="(00) 00000-0000"
               />
             </Campo>
@@ -186,6 +200,7 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
                 className={inputClasses}
                 placeholder="00000-000"
                 inputMode="numeric"
+                maxLength={9}
                 autoFocus
               />
               <div style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
@@ -228,6 +243,17 @@ export function ClienteForm({ inicial, onSalvar, onCancelar }) {
               />
             </Campo>
           </div>
+
+          <Campo label="Ponto de referência (opcional)">
+            <input
+              value={form.endereco.referencia}
+              onChange={(e) => setEndereco("referencia", e.target.value)}
+              className={inputClasses}
+              placeholder="Ex: ao lado da padaria Pão Quente, portão azul"
+              maxLength={120}
+            />
+            <p className="text-xs text-stone-400 mt-1.5">Ajuda o entregador a achar o endereço. Aparece nas entregas.</p>
+          </Campo>
 
           <Campo label="Bairro">
             <input

@@ -529,3 +529,48 @@ test("importar NF-e: produto novo sem código ganha SKU gerado; nota sem duplica
     assert.deepEqual(l, { pago: true, hoje: true, v: 23.4, forma_pagamento: "" });
   });
 });
+
+test("documento de cliente e fornecedor precisa ter 11 (CPF) ou 14 (CNPJ) números", async () => {
+  await como("admin@x.com", async () => {
+    await erro(q(`insert into clientes (tipo, nome, documento) values ('PF', 'Curto', '123.456.789-0')`), "clientes_documento_tamanho");
+    await erro(q(`insert into clientes (tipo, nome, documento) values ('PF', 'Longo', '123456789012')`), "clientes_documento_tamanho");
+    await erro(q(`insert into fornecedores (tipo, nome, documento) values ('PJ', 'Curto', '1234567')`), "fornecedores_documento_tamanho");
+    await q(`insert into clientes (tipo, nome, documento) values ('PF', 'Certo', '987.654.321-00')`);
+    await q(`insert into fornecedores (tipo, nome, documento) values ('PJ', 'Certo', '98.765.432/0001-99')`);
+  });
+  await q("delete from clientes where nome = 'Certo'");
+  await q("delete from fornecedores where nome = 'Certo'");
+});
+
+test("importar NF-e grava o vínculo código do fornecedor → produto; a nota seguinte só soma no estoque", async () => {
+  await como("admin@x.com", async () => {
+    const nota = (chave, qtd, itens) => ({
+      chave, numero_nf: "9" + qtd, atualizar_custo: false, parcelas: [], ja_pago: true,
+      fornecedor: { documento: "55.666.777/0001-88", nome: "Forn Vinculo" }, itens,
+    });
+    const novo = { codigo_fornecedor: "a-100", nome: "Parafuso", quantidade: 10, preco_unitario: 1.5, novo_produto: { nome: "Parafuso 6mm", unidade: "un", preco: 3 } };
+    await q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota("10".repeat(22), 10, [novo]))]);
+    const prod = (await q("select id from produtos where nome = 'Parafuso 6mm'"))[0].id;
+    const forn = (await q("select id from fornecedores where documento = '55.666.777/0001-88'"))[0].id;
+    const vinc = await q("select codigo, produto_id from produtos_codigo_fornecedor where fornecedor_id = $1", [forn]);
+    assert.deepEqual(vinc, [{ codigo: "A-100", produto_id: prod }], "código guardado em maiúsculas");
+
+    // segunda nota: o front manda o produto já associado; só entra estoque, nenhum produto novo
+    const antes = (await q("select count(*)::int n from produtos"))[0].n;
+    await q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota("20".repeat(22), 5, [{ codigo_fornecedor: "A-100", produto_id: prod, nome: "Parafuso", quantidade: 5, preco_unitario: 1.6 }]))]);
+    assert.equal((await q("select count(*)::int n from produtos"))[0].n, antes);
+    assert.equal(Number((await q("select estoque from produtos where id = $1", [prod]))[0].estoque), 15);
+
+    // corrigir a associação troca o vínculo (sem duplicar)
+    const outro = (await q("select id from produtos where nome = 'Torneira'"))[0].id;
+    await q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota("30".repeat(22), 1, [{ codigo_fornecedor: "a-100", produto_id: outro, nome: "Parafuso", quantidade: 1, preco_unitario: 2 }]))]);
+    assert.deepEqual(await q("select produto_id from produtos_codigo_fornecedor where fornecedor_id = $1", [forn]), [{ produto_id: outro }]);
+  });
+  // só lê quem vê Compras; ninguém escreve direto
+  await como("vend@x.com", async () => {
+    assert.equal((await q("select count(*)::int n from produtos_codigo_fornecedor"))[0].n, 0, "vendedor não vê compras: RLS esconde");
+  });
+  await como("admin@x.com", async () => {
+    await erro(q("insert into produtos_codigo_fornecedor (fornecedor_id, codigo, produto_id) values (1, 'X', 1)"), "permission denied");
+  });
+});

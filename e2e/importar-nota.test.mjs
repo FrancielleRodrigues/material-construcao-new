@@ -120,3 +120,37 @@ test("Compras: nota de balcão com linhas repetidas e sem duplicatas (SKU gerado
   assert.equal((await um(p, "select tipo from fornecedores where documento = '11.222.333/0001-81'")).tipo, "PJ");
   await p.close();
 });
+
+test("Compras: segunda nota do mesmo fornecedor com o mesmo produto só soma no estoque (vínculo pelo código dele)", async () => {
+  const p = await logar();
+  await aba(p, "Compras");
+  const enviar = async (arquivo) => {
+    await p.getByRole("button", { name: /Importar XML da nota/ }).click();
+    await p.getByTestId("arquivo-xml").setInputFiles(path.join(aqui, "fixtures", arquivo));
+  };
+
+  // 1ª nota: o item 2 (código REJ1KG do fornecedor) é cadastrado como produto novo
+  await enviar("nfe-votoran.xml");
+  await p.getByTestId("item-nota-2").getByLabel("Preço de venda do item 2").fill("9.90");
+  await p.getByRole("button", { name: "Importar e dar entrada" }).click();
+  await p.getByRole("button", { name: "Importar e dar entrada" }).waitFor({ state: "detached", timeout: 15000 });
+  const produtosDepois1 = (await um(p, "select count(*)::int n from produtos")).n;
+  assert.equal((await um(p, "select count(*)::int n from produtos_codigo_fornecedor")).n, 2, "guardou os dois códigos do fornecedor");
+
+  // 2ª nota, outro nome na nota: reconhece pelo código do fornecedor, sem pedir preço nem cadastrar de novo
+  await enviar("nfe-votoran-2.xml");
+  const item = p.getByTestId("item-nota-1");
+  await item.getByText("Associado automaticamente por código do fornecedor (já importado antes)").waitFor();
+  assert.equal(await item.getByLabel("Preço de venda do item 1").count(), 0, "não pede preço: o produto já existe");
+  assert.equal(await p.getByRole("button", { name: "Importar e dar entrada" }).isDisabled(), false);
+  await p.getByRole("button", { name: "Importar e dar entrada" }).click();
+  await p.getByRole("button", { name: "Importar e dar entrada" }).waitFor({ state: "detached", timeout: 15000 });
+
+  assert.equal((await um(p, "select count(*)::int n from produtos")).n, produtosDepois1, "nenhum produto novo");
+  assert.deepEqual(
+    await um(p, "select estoque::float e, custo::float c from produtos where sku = 'REJ-CINZA' or nome = 'Rejunte flexível cinza 1kg'"),
+    { e: 30, c: 4.5 },
+    "20 da 1ª nota + 10 da 2ª; custo atualizado com 45,00/10"
+  );
+  await p.close();
+});

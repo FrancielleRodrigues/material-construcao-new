@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Plus, Search, X, Boxes, ChevronRight, Menu, ChevronDown, Eye, LogOut } from "lucide-react";
 import { cn, iniciais, hojeISO, formatarEndereco } from "./utils/format";
+import { mascararCep } from "./utils/mascaras";
 import { buscarCep } from "./utils/cep";
 import { NAV_ITEMS, TITULOS_ABA } from "./data/constantes";
 import { EMPRESA_FISCAL_INICIAL } from "./data/iniciais";
@@ -420,7 +421,7 @@ export default function Sistema({ userId, email, onSair }) {
   }
 
   async function onCepVendaChange(valor) {
-    const mascarado = valor.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+    const mascarado = mascararCep(valor);
     setCepVenda(mascarado);
     if (mascarado.replace(/\D/g, "").length === 8) {
       setStatusCepVenda("buscando");
@@ -1005,6 +1006,7 @@ export default function Sistema({ userId, email, onSair }) {
           pedidos={pedidos}
           cnpjEmpresa={empresaFiscal.cnpj}
           onImportar={importarNota}
+          buscarVinculos={api.codigosDoFornecedor}
           onCancelar={() => setImportandoNota(false)}
         />
       )}

@@ -5,6 +5,12 @@ export function formatarEndereco(e) {
   return [linha1, linha2].filter(Boolean).join(" - ");
 }
 
+// Endereço para ENTREGA: o de sempre + complemento + ponto de referência do cadastro do cliente.
+export function formatarEnderecoEntrega(e) {
+  if (!e) return "";
+  return [formatarEndereco(e), e.complemento, e.referencia ? `Ref.: ${e.referencia}` : ""].filter(Boolean).join(" - ");
+}
+
 // Datas "de calendário" (sem hora) no fuso do navegador. toISOString() usaria UTC e,
 // depois das 21h no Brasil, já devolveria o dia seguinte.
 function paraISO(d) {
