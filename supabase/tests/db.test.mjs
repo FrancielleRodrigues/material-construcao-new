@@ -516,3 +516,16 @@ test("importar NF-e é atômico e confere permissões e dados", async () => {
   });
   assert.deepEqual(await contar(), antes);
 });
+
+test("importar NF-e: produto novo sem código ganha SKU gerado; nota sem duplicatas pode entrar já paga", async () => {
+  await como("admin@x.com", async () => {
+    const nota = notaBase({ chave: "9".repeat(44), numero_nf: "88", parcelas: [], ja_pago: true });
+    nota.itens = [{ nome: "Veda tudo 100g", quantidade: 1, preco_unitario: 23.4, novo_produto: { nome: "Veda tudo 100g", unidade: "un", preco: 35 } }];
+    await q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota)]);
+    const prod = (await q("select sku, codigo_barras from produtos where nome = 'Veda tudo 100g'"))[0];
+    assert.match(prod.sku, /^P\d{5}$/);
+    assert.equal(prod.codigo_barras, null);
+    const l = (await q("select pago, data_pagamento = public.hoje() as hoje, valor::float v, forma_pagamento from lancamentos where descricao = 'NF-e nº 88'"))[0];
+    assert.deepEqual(l, { pago: true, hoje: true, v: 23.4, forma_pagamento: "" });
+  });
+});

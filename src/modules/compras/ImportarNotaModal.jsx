@@ -28,6 +28,7 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
   const [categoria, setCategoria] = useState(CATEGORIAS[0].id);
   const [margem, setMargem] = useState("30");
   const [enviando, setEnviando] = useState(false);
+  const [jaPago, setJaPago] = useState(false);
 
   const produtosOrdenados = useMemo(() => [...produtos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")), [produtos]);
 
@@ -67,12 +68,7 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
 
   const novos = nota ? nota.itens.filter((i) => !escolhido(i)) : [];
   // o que impede de importar (cada item novo precisa de preço de venda e de um código)
-  const pendencias = nota
-    ? novos.flatMap((i) => [
-        ...(!(Number(precoDe(i)) > 0) ? [`Informe o preço de venda de "${i.nome}".`] : []),
-        ...(!i.codigoBarras && !i.codigo ? [`"${i.nome}" não tem código de barras nem código do fornecedor: associe a um produto existente.`] : []),
-      ])
-    : [];
+  const pendencias = nota ? novos.filter((i) => !(Number(precoDe(i)) > 0)).map((i) => `Informe o preço de venda de "${i.nome}".`) : [];
 
   function aplicarMargem() {
     const m = Number(String(margem).replace(",", "."));
@@ -90,7 +86,7 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
     if (!nota || pendencias.length || enviando) return;
     setEnviando(true);
     try {
-      await onImportar(montarPayload(nota, { atualizarCusto, categoria, ajustes }));
+      await onImportar(montarPayload(nota, { atualizarCusto, categoria, ajustes, jaPago }));
     } finally {
       setEnviando(false);
     }
@@ -178,6 +174,11 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
                         {item.codigo && <>Cód. do fornecedor: {item.codigo}</>}
                         {item.codigoBarras && <> · Cód. de barras: {item.codigoBarras}</>}
                       </p>
+                      {item.linhasNota.length > 1 && (
+                        <p className="text-xs text-sky-700 bg-sky-50 rounded-md px-2 py-1">
+                          Juntei as linhas {item.linhasNota.join(" e ")} da nota: é o mesmo produto.
+                        </p>
+                      )}
                       <select
                         value={produtoId ?? ""}
                         onChange={(e) => ajustar(item.n, { produtoId: e.target.value ? Number(e.target.value) : null })}
@@ -196,18 +197,40 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
                           <p className="text-xs text-stone-400">A entrada será somada ao estoque deste produto.</p>
                         )
                       ) : (
-                        <Campo label="Preço de venda do produto novo (R$)">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={precoDe(item)}
-                            onChange={(e) => ajustar(item.n, { preco: e.target.value })}
-                            className={inputClasses}
-                            placeholder={`Custo: ${custoFmt(item.custoUnitario)}`}
-                            aria-label={`Preço de venda do item ${item.n}`}
-                          />
-                        </Campo>
+                        <div className="space-y-3">
+                          <Campo label="Preço de venda do produto novo (R$)">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={precoDe(item)}
+                              onChange={(e) => ajustar(item.n, { preco: e.target.value })}
+                              className={inputClasses}
+                              placeholder={`Custo: ${custoFmt(item.custoUnitario)}`}
+                              aria-label={`Preço de venda do item ${item.n}`}
+                            />
+                          </Campo>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Campo label="Código de barras (opcional)">
+                              <input
+                                value={ajustes[item.n]?.codigoBarras ?? item.codigoBarras}
+                                onChange={(e) => ajustar(item.n, { codigoBarras: e.target.value })}
+                                className={inputClasses}
+                                placeholder="Sem código na nota"
+                                aria-label={`Código de barras do item ${item.n}`}
+                              />
+                            </Campo>
+                            <Campo label="SKU da sua loja (opcional)">
+                              <input
+                                value={ajustes[item.n]?.sku ?? ""}
+                                onChange={(e) => ajustar(item.n, { sku: e.target.value })}
+                                className={inputClasses}
+                                placeholder="Em branco: o sistema gera"
+                                aria-label={`SKU do item ${item.n}`}
+                              />
+                            </Campo>
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
@@ -235,7 +258,13 @@ export function ImportarNotaModal({ produtos, fornecedores, pedidos, cnpjEmpresa
                   </p>
                 ))
               ) : (
-                <p className="text-stone-600">A nota não traz duplicatas: será lançada uma despesa de {moeda(totalItens)} com vencimento hoje (ajuste no Financeiro).</p>
+                <>
+                  <p className="text-stone-600">A nota não traz duplicatas: será lançada uma despesa de {moeda(totalItens)} com vencimento hoje.</p>
+                  <label className="flex items-center gap-2 text-stone-700 cursor-pointer">
+                    <input type="checkbox" checked={jaPago} onChange={(e) => setJaPago(e.target.checked)} />
+                    <span>Já foi paga (compra à vista)</span>
+                  </label>
+                </>
               )}
               <p className="flex justify-between border-t border-stone-100 pt-1.5 text-stone-800 font-medium">
                 <span>Total da nota</span><span className="tabular-nums">{moeda(nota.totalNota)}</span>

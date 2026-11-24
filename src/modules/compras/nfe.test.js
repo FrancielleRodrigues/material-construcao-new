@@ -100,11 +100,35 @@ test("payload: produto existente vai por id; novo vai com dados e preço informa
   assert.equal(p.chave, c.chave);
   assert.equal(p.atualizar_custo, false);
   assert.deepEqual(p.itens[0], { nome: "Cimento CP-II 50kg", quantidade: 100, preco_unitario: 31, produto_id: 1 });
-  assert.deepEqual(p.itens[1].novo_produto, { nome: "Rejunte flexível cinza 1kg", unidade: "un", categoria: "acabamento", preco: 9.9, codigo_barras: null, sku: "REJ1KG" });
+  // o código do fornecedor (REJ1KG) NÃO vira SKU: o SKU é da loja e, em branco, o banco gera
+  assert.deepEqual(p.itens[1].novo_produto, { nome: "Rejunte flexível cinza 1kg", unidade: "un", categoria: "acabamento", preco: 9.9, codigo_barras: null, sku: null });
+  const comCodigos = montarPayload(c, { ajustes: { 2: { preco: "9.9", sku: " REJ-LOJA ", codigoBarras: "7890000000001" } } });
+  assert.equal(comCodigos.itens[1].novo_produto.sku, "REJ-LOJA");
+  assert.equal(comCodigos.itens[1].novo_produto.codigo_barras, "7890000000001");
+  assert.equal(montarPayload(c, { jaPago: true }).ja_pago, true);
   assert.equal(p.itens[1].produto_id, null);
   assert.equal(p.parcelas.length, 2);
   // o usuário pode trocar a associação
   const trocado = montarPayload(c, { ajustes: { 2: { produtoId: 2 } } });
   assert.equal(trocado.itens[1].produto_id, 2);
   assert.equal(trocado.itens[1].novo_produto, undefined);
+});
+
+test("linhas repetidas do mesmo produto são juntas numa só (quantidade e custo somados)", () => {
+  const dup = readFileSync(new URL("../../../e2e/fixtures/nfe-balcao-duplicado.xml", import.meta.url), "utf8");
+  const r = lerNfe(dup, DOMParser);
+  assert.equal(r.ok, true);
+  const n = r.nota;
+  assert.equal(n.itens.length, 3, "4 linhas na nota, 3 produtos");
+  const rejunte = n.itens[0];
+  assert.equal(rejunte.codigo, "1207");
+  assert.equal(rejunte.quantidade, 2);
+  assert.equal(rejunte.custoTotal, 40.5);
+  assert.equal(rejunte.custoUnitario, 20.25);
+  assert.deepEqual(rejunte.linhasNota, [1, 2]);
+  assert.deepEqual(n.itens.map((i) => i.n), [1, 2, 3], "numeração segue a lista agrupada");
+  assert.equal(Math.round(n.itens.reduce((s, i) => s + i.custoTotal, 0) * 100) / 100, 71.1, "continua fechando com o total da nota");
+  assert.equal(n.totalNota, 71.1);
+  assert.deepEqual(n.parcelas, [], "sem duplicatas (venda de balcão)");
+  assert.equal(n.itens[0].codigoBarras, "", "SEM GTIN não é código de barras");
 });

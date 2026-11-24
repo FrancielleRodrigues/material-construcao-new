@@ -45,6 +45,8 @@ test("Compras: importa o XML, confere os itens, grava tudo e não deixa importar
   await p.getByRole("button", { name: "Sugerir preços" }).click();
   assert.equal(await p.getByLabel("Preço de venda do item 2").inputValue(), "5.59");
   await p.getByLabel("Preço de venda do item 2").fill("9.90");
+  assert.equal(await p.getByLabel("SKU do item 2").inputValue(), "", "o código do fornecedor não vira SKU");
+  await p.getByLabel("SKU do item 2").fill("REJ-CINZA");
   assert.equal(await importar.isDisabled(), false);
   await importar.click();
 
@@ -58,8 +60,8 @@ test("Compras: importa o XML, confere os itens, grava tudo e não deixa importar
   );
   assert.equal((await um(p, "select estoque::float e from produtos where nome = 'Cimento CP-II 50kg'")).e, estoqueAntes + 100);
   assert.deepEqual(
-    await um(p, "select estoque::float e, preco::float pr, custo::float c, sku, categoria from produtos where sku = 'REJ1KG'"),
-    { e: 20, pr: 9.9, c: 4.3, sku: "REJ1KG", categoria: "cimento" }
+    await um(p, "select estoque::float e, preco::float pr, custo::float c, sku, categoria from produtos where sku = 'REJ-CINZA'"),
+    { e: 20, pr: 9.9, c: 4.3, sku: "REJ-CINZA", categoria: "cimento" }
   );
   assert.equal((await um(p, "select custo::float c from produtos where nome = 'Cimento CP-II 50kg'")).c, 31);
   assert.deepEqual(
@@ -95,4 +97,26 @@ test("Compras: arquivo que não é NF-e dá aviso claro; quem só visualiza não
   await c.getByText("Pedidos pendentes").waitFor();
   assert.equal(await c.getByRole("button", { name: /Importar XML da nota/ }).count(), 0);
   await c.close();
+});
+
+test("Compras: nota de balcão com linhas repetidas e sem duplicatas (SKU gerado, já paga)", async () => {
+  const p = await logar();
+  await aba(p, "Compras");
+  await p.getByRole("button", { name: /Importar XML da nota/ }).click();
+  await p.getByTestId("arquivo-xml").setInputFiles(path.join(aqui, "fixtures/nfe-balcao-duplicado.xml"));
+  await p.getByText("Itens (3)").waitFor();
+  await p.getByTestId("item-nota-1").getByText("Juntei as linhas 1 e 2 da nota").waitFor();
+  await p.getByText("A nota não traz duplicatas").waitFor();
+  await p.getByText("Será cadastrado como novo fornecedor").waitFor();
+  await p.getByRole("checkbox", { name: "Já foi paga (compra à vista)" }).check();
+  for (const n of [1, 2, 3]) await p.getByLabel(`Preço de venda do item ${n}`).fill("50");
+  await p.getByRole("button", { name: "Importar e dar entrada" }).click();
+  await p.getByRole("button", { name: "Importar e dar entrada" }).waitFor({ state: "detached", timeout: 15000 });
+
+  const prods = await sql(p, "select nome, estoque::float e, sku, codigo_barras from produtos where nome like 'REJUNTE RESINADO%' or nome like 'VEDA TUDO%' or nome like 'ESG ANEL%' order by nome");
+  assert.deepEqual(prods.map((x) => [x.nome, x.e, x.codigo_barras]), [["ESG ANEL 100MM", 2, null], ["REJUNTE RESINADO BEGE 1KG", 2, null], ["VEDA TUDO 100G", 1, null]]);
+  assert.ok(prods.every((x) => /^P\d{5}$/.test(x.sku)), "SKU gerado pelo sistema, não o código do fornecedor");
+  assert.deepEqual(await um(p, "select pago, valor::float v from lancamentos where descricao = 'NF-e nº 304'"), { pago: true, v: 71.1 });
+  assert.equal((await um(p, "select tipo from fornecedores where documento = '11.222.333/0001-81'")).tipo, "PJ");
+  await p.close();
 });

@@ -155,7 +155,23 @@ export function lerNfe(xml, Analisador = globalThis.DOMParser) {
     const resto = totais.nota - itens.reduce((s, i) => s + i.custoTotal, 0);
     if (Math.abs(resto) > 0.005 && base) itens.forEach((i) => { i.custoTotal += (resto * i.valorProdutos) / base; });
   }
-  itens.forEach((i) => {
+  // A mesma mercadoria pode vir em mais de uma linha (ex.: itens de pedidos diferentes): junta numa só,
+  // somando quantidade e custo, para não cadastrar nem lançar o produto duas vezes.
+  const chaveDoItem = (i) => `${(i.codigo || i.codigoBarras || i.nome).toUpperCase()}|${i.unidade}`;
+  const agrupados = [];
+  for (const i of itens) {
+    const existente = agrupados.find((g) => chaveDoItem(g) === chaveDoItem(i));
+    if (existente) {
+      existente.quantidade += i.quantidade;
+      existente.valorProdutos += i.valorProdutos;
+      existente.custoTotal += i.custoTotal;
+      existente.linhasNota.push(i.n);
+    } else {
+      agrupados.push({ ...i, linhasNota: [i.n] });
+    }
+  }
+  agrupados.forEach((i, idx) => {
+    i.n = idx + 1;
     i.custoUnitario = arredonda(i.custoTotal / i.quantidade, 4);
     i.custoTotal = arredonda(i.custoTotal, 2);
   });
@@ -175,9 +191,9 @@ export function lerNfe(xml, Analisador = globalThis.DOMParser) {
       naturezaOperacao: texto(inf, "ide", "natOp"),
       fornecedor,
       destinatario,
-      itens,
+      itens: agrupados,
       parcelas,
-      totalNota: totais.nota || arredonda(itens.reduce((s, i) => s + i.custoTotal, 0), 2),
+      totalNota: totais.nota || arredonda(agrupados.reduce((s, i) => s + i.custoTotal, 0), 2),
       avisos,
     },
   };
@@ -204,14 +220,16 @@ export function conferirNota(nota, { produtos = [], fornecedores = [], cnpjEmpre
 }
 
 // Monta o JSON que a função do banco recebe (importar_nota_compra).
-// `ajustes`: { [n do item]: { produtoId, preco } } com o que o usuário escolheu na conferência.
-export function montarPayload(nota, { atualizarCusto = true, categoria = "", ajustes = {} } = {}) {
+// `ajustes`: { [n do item]: { produtoId, preco, sku, codigoBarras } } com o que o usuário escolheu na conferência.
+// O código do fornecedor NÃO vira SKU: o SKU é o código interno da loja (vazio = o banco gera um).
+export function montarPayload(nota, { atualizarCusto = true, categoria = "", ajustes = {}, jaPago = false } = {}) {
   return {
     chave: nota.chave,
     numero_nf: nota.numero,
     serie: nota.serie,
     data_emissao: nota.emissao || null,
     atualizar_custo: atualizarCusto,
+    ja_pago: Boolean(jaPago),
     fornecedor: { documento: nota.fornecedor.documento, nome: nota.fornecedor.nome, telefone: nota.fornecedor.telefone, endereco: nota.fornecedor.endereco },
     itens: nota.itens.map((i) => {
       const aj = ajustes[i.n] || {};
@@ -223,7 +241,8 @@ export function montarPayload(nota, { atualizarCusto = true, categoria = "", aju
         produto_id: null,
         novo_produto: {
           nome: i.nome, unidade: i.unidade, categoria, preco: Number(aj.preco) || 0,
-          codigo_barras: i.codigoBarras || null, sku: i.codigo || null,
+          codigo_barras: (aj.codigoBarras !== undefined ? aj.codigoBarras : i.codigoBarras).trim() || null,
+          sku: String(aj.sku ?? "").trim() || null,
         },
       };
     }),
