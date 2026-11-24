@@ -1,7 +1,7 @@
 // Publicação na Cloudflare (Workers com arquivos estáticos).
 // "name" precisa ser IGUAL ao nome do projeto na Cloudflare (por padrão, o nome do repositório).
 {
-  "name": "material-construcao-new",
+  "name": "construcao",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
