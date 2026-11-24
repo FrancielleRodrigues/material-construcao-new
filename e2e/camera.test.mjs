@@ -61,7 +61,8 @@ test("Cadastro: câmera lê o código e preenche o campo; Esc fecha só a câmer
   assert.equal(await p.getByPlaceholder("Bipe ou digite o código").inputValue(), "7891000100011");
 
   // Esc na câmera fecha só a câmera: o formulário e o que foi digitado continuam
-  await p.getByRole("button", { name: "Ler SKU com a câmera" }).click();
+  assert.equal(await p.getByRole("button", { name: "Ler SKU com a câmera" }).count(), 0, "só o código de barras tem câmera");
+  await p.getByRole("button", { name: "Ler código de barras com a câmera" }).click();
   await p.getByTestId("leitor-camera").waitFor();
   await p.keyboard.press("Escape");
   await p.getByTestId("leitor-camera").waitFor({ state: "detached" });

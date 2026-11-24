@@ -14,7 +14,7 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
     inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoqueMin: "", codigoBarras: "", sku: "", fornecedorId: "", custo: "" }
   );
   const [erro, setErro] = useState("");
-  const [camera, setCamera] = useState(null); // "codigoBarras" | "sku" | null
+  const [camera, setCamera] = useState(false);
 
   function salvar() {
     if (!form.nome.trim() || form.preco === "") {
@@ -67,7 +67,7 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
               </div>
               <button
                 type="button"
-                onClick={() => setCamera("codigoBarras")}
+                onClick={() => setCamera(true)}
                 className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-600 hover:bg-stone-50"
                 aria-label="Ler código de barras com a câmera"
               >
@@ -76,8 +76,7 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
             </div>
           </Campo>
           <Campo label="SKU (código interno)">
-            <div className="flex gap-2">
-              <div style={{ position: "relative" }} className="flex-1 min-w-0">
+            <div style={{ position: "relative" }}>
                 <Tag size={14} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
                 <input
                   value={form.sku}
@@ -85,15 +84,6 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
                   className={cn(inputClasses, "pl-8")}
                   placeholder="Ex: CIM-CP2-50"
                 />
-              </div>
-              <button
-                type="button"
-                onClick={() => setCamera("sku")}
-                className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-600 hover:bg-stone-50"
-                aria-label="Ler SKU com a câmera"
-              >
-                <Camera size={15} /> <span className="hidden sm:inline">Câmera</span>
-              </button>
             </div>
           </Campo>
         </div>
@@ -174,9 +164,9 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
     </Painel>
     {camera && (
       <LeitorCodigo
-        titulo={camera === "sku" ? "Ler SKU" : "Ler código de barras"}
-        onFechar={() => setCamera(null)}
-        onLer={(codigo) => setForm((f) => ({ ...f, [camera]: codigo }))}
+        titulo="Ler código de barras"
+        onFechar={() => setCamera(false)}
+        onLer={(codigo) => setForm((f) => ({ ...f, codigoBarras: codigo }))}
       />
     )}
     </>
