@@ -294,6 +294,65 @@ test("Auditoria: administrador vê quem alterou o quê; vendedor não vê a aba"
   assert.equal(await v.locator("nav").getByText("Usuários").count(), 0);
 });
 
+test("Esqueci minha senha: pede o link sem revelar se o e-mail existe", async () => {
+  const p = await app.novaPagina();
+  await p.getByRole("button", { name: "Esqueci minha senha" }).click();
+  // e-mail vazio
+  await p.getByRole("button", { name: "Enviar link" }).click();
+  await p.getByRole("alert").getByText("Informe o seu e-mail.").waitFor();
+  // e-mail cadastrado e e-mail desconhecido recebem exatamente a mesma resposta
+  for (const email of ["admin@teste.com", "ninguem@teste.com"]) {
+    await p.getByPlaceholder("voce@empresa.com.br").fill(email);
+    await p.getByRole("button", { name: "Enviar link" }).click();
+    await p.getByText("Se este e-mail estiver cadastrado, enviamos um link").waitFor();
+    await p.getByRole("button", { name: "Voltar ao login" }).click();
+    await p.getByRole("button", { name: "Esqueci minha senha" }).click();
+  }
+  const enviados = await p.evaluate(() => window.__fake.emailsEnviados);
+  assert.deepEqual(enviados.map((e) => e.email), ["admin@teste.com", "ninguem@teste.com"]);
+  assert.match(enviados[0].redirectTo, /^http:\/\/localhost:\d+\/$/, "o link volta para o próprio site");
+});
+
+test("Link do e-mail: define nova senha (com validações), entra, e a senha antiga deixa de valer", async () => {
+  const p = await app.novaPagina();
+  await p.getByRole("button", { name: "Entrar" }).waitFor({ timeout: 40000 });
+  await p.evaluate(() => window.__fake.clicarLinkRecuperacao("vendedor@teste.com"));
+  await p.getByText("Defina uma nova senha").waitFor();
+  assert.equal(await p.locator("nav").count(), 0, "o sistema não abre antes de definir a nova senha");
+
+  const campos = p.locator('input[type="password"]');
+  await campos.nth(0).fill("curta");
+  await campos.nth(1).fill("curta");
+  await p.getByRole("button", { name: "Salvar nova senha" }).click();
+  await p.getByRole("alert").getByText(/pelo menos 12 caracteres/).waitFor();
+  await campos.nth(0).fill("uma-senha-bem-longa-1");
+  await campos.nth(1).fill("outra-senha-diferente");
+  await p.getByRole("button", { name: "Salvar nova senha" }).click();
+  await p.getByRole("alert").getByText("As duas senhas não são iguais.").waitFor();
+  await campos.nth(1).fill("uma-senha-bem-longa-1");
+  await p.getByRole("button", { name: "Salvar nova senha" }).click();
+
+  await p.getByText("Clientes cadastrados").waitFor({ timeout: 30000 }); // entrou no sistema
+  await p.getByRole("button", { name: /Marcos Vendas/ }).click();
+  await p.getByRole("button", { name: "Sair" }).click();
+  await p.getByRole("button", { name: "Entrar" }).waitFor();
+
+  await entrar(p, "vendedor@teste.com", "senha123"); // a antiga
+  await p.getByRole("alert").getByText("E-mail ou senha incorretos.").waitFor();
+  await p.locator('input[type="password"]').fill("uma-senha-bem-longa-1");
+  await p.getByRole("button", { name: "Entrar" }).click();
+  await p.getByText("Clientes cadastrados").waitFor({ timeout: 30000 });
+});
+
+test("Link do e-mail vencido: o login explica e manda pedir outro", async () => {
+  const p = await app.novaPagina();
+  await p.getByRole("button", { name: "Entrar" }).waitFor({ timeout: 40000 });
+  await p.goto(p.url().split("#")[0] + "#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired");
+  await p.reload();
+  await p.getByRole("alert").getByText(/Esse link venceu ou já foi usado/).waitFor({ timeout: 40000 });
+  await p.getByRole("button", { name: "Esqueci minha senha" }).waitFor();
+});
+
 test("layout de celular: login e dashboard sem erro", async () => {
   const p = await logar("admin@teste.com", 390);
   await p.getByText("Clientes cadastrados").waitFor();

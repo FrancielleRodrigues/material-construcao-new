@@ -1,14 +1,27 @@
 import { supabaseConfigurado, variaveisFaltando } from "./lib/supabase";
 import { useSessao } from "./hooks/useSessao";
-import { entrar, sair } from "./data/api";
+import { entrar, sair, enviarRecuperacao, definirNovaSenha } from "./data/api";
 import Sistema from "./Sistema";
 import { LoginScreen } from "./modules/auth/LoginScreen";
+import { NovaSenhaScreen } from "./modules/auth/NovaSenhaScreen";
 import { TelaAviso } from "./modules/auth/TelaAviso";
 
 function Autenticado() {
-  const { sessao, carregando } = useSessao();
+  const { sessao, carregando, recuperando, concluirRecuperacao, erroLink } = useSessao();
   if (carregando) return <TelaAviso titulo="Carregando..." />;
-  if (!sessao) return <LoginScreen onEntrar={entrar} />;
+  // Chegou pelo link do e-mail: primeiro define a nova senha, depois entra no sistema.
+  if (sessao && recuperando) {
+    return (
+      <NovaSenhaScreen
+        onSalvar={async (senha) => {
+          await definirNovaSenha(senha);
+          concluirRecuperacao();
+        }}
+        onCancelar={sair}
+      />
+    );
+  }
+  if (!sessao) return <LoginScreen onEntrar={entrar} onRecuperar={enviarRecuperacao} avisoInicial={erroLink} />;
   // key: trocar de usuário descarta todo o estado do usuário anterior.
   return <Sistema key={sessao.user.id} userId={sessao.user.id} email={sessao.user.email} onSair={sair} />;
 }

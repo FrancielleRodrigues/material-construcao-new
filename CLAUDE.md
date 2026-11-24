@@ -53,7 +53,7 @@ Integrações entre módulos (já implementadas):
 
 1. Criar projeto Vite + Tailwind, copiar o arquivo para `src/App.jsx`, confirmar que roda (`npm run dev`). Depois **dividir o arquivo em módulos** (`components/`, `modules/`, `data/`, `utils/`).
 2. ~~Banco (Supabase)~~ — migrações aplicadas no projeto `material_construcao` (ref `xuzazjuhbrwonsiieguq`) em 23/10/2026, por partes (a ferramenta travava com a migração inteira). Em 26/10/2026 foi aplicada a migração de segurança (login por uid, schema `private`, auditoria), também por partes. O primeiro administrador e `salvar_pedido_compra` já existem. Nenhum login pelo site foi testado ainda. Avisos restantes do Supabase: as 5 funções de negócio (intencionais) e "leaked password protection" (liga-se em Authentication; é recurso do plano Pro).
-3. ~~Autenticação + RLS por papel~~ — feito. Falta: convidar usuários pelo sistema (hoje a senha é criada no painel do Supabase) e recuperação de senha.
+3. ~~Autenticação + RLS por papel~~ — feito, incluindo "Esqueci minha senha" (login → e-mail com link → tela de nova senha; precisa de Site URL e, para outros e-mails além da equipe, SMTP próprio no Supabase: ver README). Falta: convidar usuários pelo sistema (hoje o login é criado no painel do Supabase).
 4. **Fiscal real** via provedor de NF-e, com função no backend (certificado nunca no navegador).
 5. Faltantes levantados: abertura/fechamento de caixa, orçamento/cotação, devolução (estorno + volta ao estoque), comissão de vendedor, conta por obra/projeto (construtoras), relatórios (curva ABC, margem, inadimplência), etiqueta de código de barras, alertas de estoque baixo/contas a vencer.
 

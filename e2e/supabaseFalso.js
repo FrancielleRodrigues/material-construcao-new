@@ -24,6 +24,7 @@ const STUB = `
 
 const PARSERS = { 20: (v) => Number(v), 1700: (v) => Number(v), 1082: (v) => v, 1114: (v) => v, 1184: (v) => v };
 const SENHA = "senha123";
+const senhas = {}; // senhas trocadas durante o teste (e-mail em minúsculas → senha)
 
 let emailAtual = null; // usuário logado (JWT simulado)
 let uidAtual = null;
@@ -39,6 +40,20 @@ const pronto = (async () => {
   return db;
 })();
 window.__db = pronto; // para os testes inspecionarem o banco
+window.__fake = {
+  emailsEnviados: [],
+  // Simula o clique no link do e-mail: o Supabase abre uma sessão e avisa PASSWORD_RECOVERY.
+  async clicarLinkRecuperacao(email) {
+    const db = await pronto;
+    let r = await db.query("select id from auth.users where lower(email) = lower($1)", [email]);
+    if (!r.rows.length) r = await db.query("insert into auth.users (email, email_confirmed_at) values ($1, now()) returning id", [email]);
+    emailAtual = email;
+    uidAtual = r.rows[0].id;
+    const sessao = { user: { id: uidAtual, email } };
+    ouvintes.forEach((cb) => cb("PASSWORD_RECOVERY", sessao));
+    ouvintes.forEach((cb) => cb("SIGNED_IN", sessao));
+  },
+};
 
 const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
 
@@ -138,7 +153,7 @@ export const supabase = {
     },
     async signInWithPassword({ email, password }) {
       await pronto;
-      if (password !== SENHA) return { error: { message: "Invalid login credentials" } };
+      if (password !== (senhas[email.toLowerCase()] ?? SENHA)) return { error: { message: "Invalid login credentials" } };
       const db = await pronto;
       // e-mail sem cadastro no sistema também consegue logar (cria o login): deve cair em "Sem acesso"
       let r = await db.query("select id from auth.users where lower(email) = lower($1)", [email]);
@@ -147,6 +162,19 @@ export const supabase = {
       uidAtual = r.rows[0].id;
       ouvintes.forEach((cb) => cb("SIGNED_IN", { user: { id: uidAtual, email } }));
       return { error: null };
+    },
+    // "Esqueci minha senha": guarda o pedido (o teste confere) e responde igual exista o e-mail ou não.
+    async resetPasswordForEmail(email, opcoes) {
+      window.__fake.emailsEnviados.push({ email, redirectTo: opcoes?.redirectTo });
+      return { data: {}, error: null };
+    },
+    async updateUser({ password }) {
+      if (!emailAtual) return { data: null, error: { message: "Auth session missing!", code: "session_not_found" } };
+      if (password === (senhas[emailAtual.toLowerCase()] ?? SENHA)) {
+        return { data: null, error: { message: "New password should be different from the old password.", code: "same_password" } };
+      }
+      senhas[emailAtual.toLowerCase()] = password;
+      return { data: { user: { id: uidAtual, email: emailAtual } }, error: null };
     },
     async signOut() {
       emailAtual = null;

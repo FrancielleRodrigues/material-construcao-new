@@ -197,6 +197,33 @@ export async function entrar(email, senha) {
   }
 }
 
+// Manda o e-mail com o link de redefinição. A resposta é sempre a mesma, exista o e-mail ou não,
+// para ninguém descobrir quais e-mails estão cadastrados.
+export async function enviarRecuperacao(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: window.location.origin + import.meta.env.BASE_URL,
+  });
+  if (error) {
+    if (/rate limit|too many|over_email_send_rate_limit|over_request_rate_limit/i.test(`${error.message} ${error.code || ""}`)) {
+      throw new ErroApi("Muitas solicitações. Aguarde alguns minutos e tente de novo.");
+    }
+    throw new ErroApi("Não foi possível enviar o e-mail agora. Tente mais tarde ou fale com o administrador.");
+  }
+}
+
+// Chamada na tela aberta pelo link do e-mail (a sessão de recuperação já está ativa).
+export async function definirNovaSenha(senha) {
+  const { error } = await supabase.auth.updateUser({ password: senha });
+  if (error) {
+    const t = `${error.message} ${error.code || ""}`;
+    if (/same_password|different from the old/i.test(t)) throw new ErroApi("A nova senha precisa ser diferente da atual.");
+    if (/weak|pwned|known to be|easy to guess/i.test(t)) throw new ErroApi("Essa senha é fraca ou já apareceu em vazamentos. Escolha outra.");
+    if (/session|jwt|expired|not authenticated/i.test(t)) throw new ErroApi("O link expirou. Volte ao login e peça um novo em \"Esqueci minha senha\".");
+    if (/at least|characters/i.test(t)) throw new ErroApi("A senha é curta demais. Use pelo menos 12 caracteres.");
+    throw new ErroApi(traduzir(error));
+  }
+}
+
 export async function sair() {
   await supabase.auth.signOut();
 }

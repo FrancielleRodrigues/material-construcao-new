@@ -30,6 +30,24 @@ Por que não o GitHub Pages: ele não permite configurar cabeçalhos de seguran�
 
 Os nomes dos menus mudam de tempos em tempos; a ideia é sempre essa. A cada push na branch de produção o site é republicado. O workflow `.github/workflows/conferir.yml` roda lint, testes do banco e build em cada push/pull request (não publica).
 
+## "Esqueci minha senha" (configuração no Supabase)
+
+A tela de login tem "Esqueci minha senha": a pessoa informa o e-mail, recebe um link, abre o site e define uma nova senha (mínimo de 12 caracteres). Para funcionar de verdade, configure no Supabase (*Authentication*):
+
+1. **URL Configuration**: *Site URL* = o endereço do site publicado e, em *Redirect URLs*, o mesmo endereço. Sem isso o link do e-mail leva para o lugar errado.
+2. **Sign In / Providers → Email → Minimum password length** = 12 (o site também exige).
+3. **E-mail**: o envio padrão do Supabase só entrega para e-mails da própria equipe do projeto e tem limite baixo (poucos e-mails por hora). Para os funcionários receberem, configure um SMTP próprio em *Authentication → SMTP Settings* (Resend, Brevo, Amazon SES etc.; todos têm plano gratuito) e confirme o domínio de envio.
+4. **Email Templates → Reset Password** (opcional, em português). Assunto: `Redefinir sua senha - ConstruGestão`. Corpo (HTML):
+
+```html
+<h2>Redefinir sua senha</h2>
+<p>Recebemos um pedido para criar uma nova senha no ConstruGestão. Clique no link abaixo para escolher uma.</p>
+<p><a href="{{ .ConfirmationURL }}">Criar nova senha</a></p>
+<p>Se você não pediu, ignore este e-mail: sua senha continua a mesma.</p>
+```
+
+O link vale por tempo limitado e só pode ser usado uma vez. Quem tem o link vira a pessoa logada, então o e-mail do funcionário precisa ser protegido (senha forte e verificação em duas etapas).
+
 ## Checklist de segurança antes de usar de verdade
 
 - [ ] Repositório **privado** (GitHub → *Settings → General → Danger Zone → Change visibility*).
