@@ -107,7 +107,7 @@ test("Produtos: cadastrar, código de barras duplicado dá aviso, editar estoque
   await p.getByPlaceholder("Ex: Cimento CP-II 50kg").fill("Areia média m³");
   await p.getByPlaceholder("Bipe ou digite o código").fill("7891000100016"); // já existe
   await p.getByPlaceholder("0,00").first().fill("120");
-  await p.locator('label:has-text("Estoque atual") + input').fill("30");
+  await p.locator('label:has-text("Quantidade em estoque") + input').fill("30");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.getByRole("alert").getByText("Já existe um produto com este código de barras.").waitFor({ timeout: 15000 });
 
@@ -120,7 +120,7 @@ test("Produtos: cadastrar, código de barras duplicado dá aviso, editar estoque
 
   // editar o estoque pelo cadastro vira movimento de ajuste (saldo continua batendo com o histórico)
   await p.locator("main tr").filter({ hasText: "Areia média m³" }).locator("button").first().click();
-  await p.locator('label:has-text("Estoque atual") + input').fill("22");
+  await p.locator('label:has-text("Quantidade em estoque") + input').fill("22");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.waitForFunction(async () => (await (await window.__db).query("select estoque::float e from produtos where nome = 'Areia média m³'")).rows[0].e === 22);
   assert.deepEqual(await num(p, `select tipo, quantidade::float q, motivo from movimentacoes where produto_id = ${idAreia} order by id desc limit 1`), { tipo: "saida", q: 8, motivo: "ajuste" });

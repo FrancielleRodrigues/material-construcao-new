@@ -22,8 +22,8 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
     onSalvar({
       ...form,
       preco: parseFloat(form.preco) || 0,
-      estoque: parseInt(form.estoque) || 0,
-      estoqueMin: parseInt(form.estoqueMin) || 0,
+      estoque: parseFloat(form.estoque) || 0,
+      estoqueMin: parseFloat(form.estoqueMin) || 0,
       custo: form.custo === "" || form.custo === null || form.custo === undefined ? null : parseFloat(form.custo),
       fornecedorId: form.fornecedorId ? Number(form.fornecedorId) : null,
     });
@@ -109,18 +109,22 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
         </Campo>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Campo label="Estoque atual">
+          <Campo label="Quantidade em estoque">
             <input
               type="number"
+              step="any"
+              min="0"
               value={form.estoque}
               onChange={(e) => setForm({ ...form, estoque: e.target.value })}
               className={inputClasses}
               placeholder="0"
             />
           </Campo>
-          <Campo label="Estoque mínimo">
+          <Campo label="Estoque mínimo (alerta)">
             <input
               type="number"
+              step="any"
+              min="0"
               value={form.estoqueMin}
               onChange={(e) => setForm({ ...form, estoqueMin: e.target.value })}
               className={inputClasses}
