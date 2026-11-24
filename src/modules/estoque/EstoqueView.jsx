@@ -2,6 +2,8 @@ import { AlertTriangle, Wallet, ArrowRightLeft, ClipboardList, History, Warehous
 import { KpiCard } from "../../components/ui/KpiCard";
 import { moeda, cn, formatarData } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 import { BarraEstoque, TipoMovimentoChip } from "./estoqueUi";
 import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from "../../data/constantes";
@@ -9,6 +11,7 @@ import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from "../../data/constantes";
 export function EstoqueView({
   barraBusca,
   movimentacoesFiltradas,
+  chavePaginacao,
   movimentacoesHoje,
   produtosEstoqueBaixo,
   produtosFiltrados,
@@ -18,6 +21,8 @@ export function EstoqueView({
   subEstoque,
   valorEmEstoque,
 }) {
+  const pgProdutos = usePaginacao(produtosFiltrados, { chave: chavePaginacao });
+  const pgMov = usePaginacao(movimentacoesFiltradas, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -44,7 +49,7 @@ export function EstoqueView({
       </div>
       {barraBusca}
       {subEstoque === "posicao" && (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div ref={pgProdutos.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           {produtosFiltrados.length === 0 ? (
             <EmptyState icon={Warehouse} title="Nenhum produto encontrado" subtitle="Cadastre produtos para começar a controlar o estoque." />
           ) : (
@@ -61,7 +66,7 @@ export function EstoqueView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {produtosFiltrados.map((p) => (
+                  {pgProdutos.itens.map((p) => (
                     <tr key={p.id} className="group hover:bg-stone-50/70 transition-colors">
                       <td className="px-5 py-3.5 font-medium text-stone-800">{p.nome}</td>
                       <td className="px-5 py-3.5"><CategoriaBadge categoriaId={p.categoria} /></td>
@@ -96,7 +101,7 @@ export function EstoqueView({
               </table>
   
               <div className="divide-y divide-stone-100 md:hidden">
-                {produtosFiltrados.map((p) => (
+                {pgProdutos.itens.map((p) => (
                   <div key={p.id} className="p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
@@ -124,12 +129,13 @@ export function EstoqueView({
                   </div>
                 ))}
               </div>
+            <Paginacao pg={pgProdutos} rotulo="produtos" />
             </>
           )}
         </div>
       )}
       {subEstoque === "historico" && (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div ref={pgMov.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           {movimentacoesFiltradas.length === 0 ? (
             <EmptyState
               icon={History}
@@ -152,7 +158,7 @@ export function EstoqueView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {movimentacoesFiltradas.map((m) => {
+                  {pgMov.itens.map((m) => {
                     const produto = produtosPorId[m.produtoId];
                     const motivo = (m.tipo === "entrada" ? MOTIVOS_ENTRADA : MOTIVOS_SAIDA).find((mo) => mo.id === m.motivo);
                     return (
@@ -174,7 +180,7 @@ export function EstoqueView({
               </table>
   
               <div className="divide-y divide-stone-100 md:hidden">
-                {movimentacoesFiltradas.map((m) => {
+                {pgMov.itens.map((m) => {
                   const produto = produtosPorId[m.produtoId];
                   const motivo = (m.tipo === "entrada" ? MOTIVOS_ENTRADA : MOTIVOS_SAIDA).find((mo) => mo.id === m.motivo);
                   return (
@@ -195,6 +201,7 @@ export function EstoqueView({
                   );
                 })}
               </div>
+            <Paginacao pg={pgMov} rotulo="movimentações" />
             </>
           )}
         </div>

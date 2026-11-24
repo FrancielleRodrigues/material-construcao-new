@@ -2,6 +2,8 @@ import { Landmark, TrendingUp, TrendingDown, AlertTriangle, Wallet, CalendarCloc
 import { KpiCard } from "../../components/ui/KpiCard";
 import { moeda, cn, formatarData } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 import { statusLancamento, TipoLancamentoChip, StatusChip } from "./financeiroUi";
 
 export function FinanceiroView({
@@ -12,12 +14,14 @@ export function FinanceiroView({
   clientesPorId,
   filtroFinanceiro,
   lancamentosFiltrados,
+  chavePaginacao,
   saldoMes,
   setConfirmacao,
   setFiltroFinanceiro,
   setFormLancamento,
   vencidos,
 }) {
+  const pg = usePaginacao(lancamentosFiltrados, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -50,7 +54,7 @@ export function FinanceiroView({
         ))}
       </div>
       {barraBusca}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         {lancamentosFiltrados.length === 0 ? (
           <EmptyState
             icon={Wallet}
@@ -74,7 +78,7 @@ export function FinanceiroView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {lancamentosFiltrados.map((l) => {
+                {pg.itens.map((l) => {
                   const status = statusLancamento(l);
                   const contraparte = l.tipo === "receita" ? (clientesPorId[l.clienteId]?.nome || "—") : (l.contraparte || "—");
                   return (
@@ -117,7 +121,7 @@ export function FinanceiroView({
             </table>
 
             <div className="divide-y divide-stone-100 md:hidden">
-              {lancamentosFiltrados.map((l) => {
+              {pg.itens.map((l) => {
                 const status = statusLancamento(l);
                 const contraparte = l.tipo === "receita" ? (clientesPorId[l.clienteId]?.nome || "—") : (l.contraparte || "—");
                 return (
@@ -157,6 +161,7 @@ export function FinanceiroView({
                 );
               })}
             </div>
+            <Paginacao pg={pg} rotulo="lançamentos" />
           </>
         )}
       </div>

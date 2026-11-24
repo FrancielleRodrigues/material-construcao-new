@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "test:db": "node --test supabase/tests/db.test.mjs supabase/tests/relatorios.test.mjs",
-    "test:e2e": "node --test --test-timeout=400000 e2e/fluxos.test.mjs e2e/relatorios.test.mjs e2e/camera.test.mjs e2e/importar-nota.test.mjs",
+    "test:e2e": "node --test --test-timeout=400000 e2e/fluxos.test.mjs e2e/relatorios.test.mjs e2e/camera.test.mjs e2e/importar-nota.test.mjs e2e/paginacao.test.mjs",
     "test:unit": "node --test src/modules/relatorios/calculos.test.js src/modules/relatorios/exportar.test.js src/modules/relatorios/modelos.test.js src/modules/compras/nfe.test.js"
   },
   "dependencies": {

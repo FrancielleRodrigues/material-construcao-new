@@ -1,7 +1,8 @@
 import { cn } from "../../utils/format";
 import { formatar } from "./formatos";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 
-const LIMITE_NA_TELA = 200;
 const NUMERICOS = new Set(["moeda", "numero", "inteiro", "percentual", "quantidade"]);
 
 // Selos para colunas de situação/classe.
@@ -29,9 +30,9 @@ function Celula({ coluna, valor }) {
 
 export function TabelaRelatorio({ tabela }) {
   const { titulo, subtitulo, colunas, linhas } = tabela;
-  const visiveis = linhas.slice(0, LIMITE_NA_TELA);
+  const pg = usePaginacao(linhas, { chave: `${tabela.id}|${linhas.length}` });
   return (
-    <section className="bg-white rounded-xl border border-stone-200 overflow-hidden" data-testid={`tabela-${tabela.id}`}>
+    <section ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden" data-testid={`tabela-${tabela.id}`}>
       <div className="px-4 py-3 border-b border-stone-100">
         <h3 className="text-sm font-semibold text-stone-800">
           {titulo} <span className="text-stone-400 font-normal">({linhas.length})</span>
@@ -53,8 +54,8 @@ export function TabelaRelatorio({ tabela }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {visiveis.map((l, i) => (
-                <tr key={i} className="hover:bg-stone-50/60">
+              {pg.itens.map((l, i) => (
+                <tr key={pg.inicio + i} className="hover:bg-stone-50/60">
                   {colunas.map((c) => (
                     <td key={c.campo} className={cn("px-4 py-2 text-stone-700 whitespace-nowrap", NUMERICOS.has(c.tipo) || c.tipo === "data" ? "text-right" : "text-left")}>
                       <Celula coluna={c} valor={l[c.campo]} />
@@ -66,10 +67,9 @@ export function TabelaRelatorio({ tabela }) {
           </table>
         </div>
       )}
-      {linhas.length > LIMITE_NA_TELA && (
-        <p className="text-xs text-stone-500 px-4 py-2.5 border-t border-stone-100 bg-stone-50">
-          Mostrando {LIMITE_NA_TELA} de {linhas.length} linhas. O arquivo do Excel traz todas.
-        </p>
+      <Paginacao pg={pg} rotulo="linhas" />
+      {linhas.length > pg.tamanho && (
+        <p className="text-xs text-stone-400 px-4 py-2 border-t border-stone-100">O arquivo do Excel traz todas as {linhas.length} linhas, não só a página.</p>
       )}
     </section>
   );

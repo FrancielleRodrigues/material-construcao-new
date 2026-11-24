@@ -31,6 +31,7 @@ Integrações entre módulos (já implementadas):
 
 ## Preferências de UX pedidas pela usuária (manter)
 
+- **Toda lista tem paginação** (computador e celular; nada de rolagem infinita): hook `hooks/usePaginacao.js` + `components/Paginacao.jsx`. Padrão 10 por página no celular e 25 no computador (o usuário troca: 10/25/50/100); no celular "Anterior · Página x de y · Próxima" com botões grandes, no computador números de página. Cada View chama `usePaginacao(lista, { chave })` e a `chavePaginacao` (busca + filtros) vem do `Sistema.jsx`: mudou a chave, volta à 1ª página. **Lista nova = paginar.** É paginação no navegador (as listas já são carregadas inteiras, em blocos de 1000, por `listar`). Tabelas dos relatórios também paginam (o Excel traz todas as linhas).
 - Cadastros de cliente e fornecedor em **wizard de 3 etapas**; demais formulários em modal único.
 - Modais **centralizados**, com largura menor que a tela; cabeçalho e rodapé fixos, só o miolo rola.
 - Busca + botão "+ Novo" no **canto superior direito** da barra do topo (desktop); botões minimalistas ("+ Novo" / "+ Nova").

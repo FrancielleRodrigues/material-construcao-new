@@ -2,6 +2,8 @@ import { Package, AlertTriangle, Wallet, Ruler, Pencil, Trash2, Factory } from "
 import { KpiCard } from "../../components/ui/KpiCard";
 import { moeda, cn } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 
 export function ProdutosView({
@@ -10,10 +12,12 @@ export function ProdutosView({
   produtos,
   produtosEstoqueBaixo,
   produtosFiltrados,
+  chavePaginacao,
   setConfirmacao,
   setFormProduto,
   valorEmEstoque,
 }) {
+  const pg = usePaginacao(produtosFiltrados, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -22,7 +26,7 @@ export function ProdutosView({
         <KpiCard label="Valor total em estoque" valor={moeda(valorEmEstoque)} icon={Wallet} tom="bg-amber-50 text-amber-700" />
       </div>
       {barraBusca}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         {produtosFiltrados.length === 0 ? (
           <EmptyState
             icon={Package}
@@ -46,7 +50,7 @@ export function ProdutosView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {produtosFiltrados.map((p) => (
+                {pg.itens.map((p) => (
                   <tr key={p.id} className="group hover:bg-stone-50/70 transition-colors">
                     <td className="px-5 py-3.5 font-medium text-stone-800">{p.nome}</td>
                     <td className="px-5 py-3.5"><CategoriaBadge categoriaId={p.categoria} /></td>
@@ -85,7 +89,7 @@ export function ProdutosView({
             </table>
 
             <div className="divide-y divide-stone-100 md:hidden">
-              {produtosFiltrados.map((p) => (
+              {pg.itens.map((p) => (
                 <div key={p.id} className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
@@ -119,6 +123,7 @@ export function ProdutosView({
                 </div>
               ))}
             </div>
+            <Paginacao pg={pg} rotulo="produtos" />
           </>
         )}
       </div>

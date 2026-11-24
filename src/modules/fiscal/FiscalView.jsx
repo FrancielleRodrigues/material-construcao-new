@@ -3,6 +3,8 @@ import { KpiCard } from "../../components/ui/KpiCard";
 import { cn, formatarData, moeda, totalVenda } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ConfigFiscalForm } from "./ConfigFiscalForm";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 
 export function FiscalView({
   clientesPorId,
@@ -16,7 +18,10 @@ export function FiscalView({
   setSubFiscal,
   subFiscal,
   vendasPendentesNota,
+  chavePaginacao,
 }) {
+  const pgPend = usePaginacao(vendasPendentesNota, { chave: chavePaginacao });
+  const pgNotas = usePaginacao(notasComVenda, { chave: chavePaginacao });
   return (
     <>
       <div className="space-y-4">
@@ -58,12 +63,12 @@ export function FiscalView({
         </div>
 
         {subFiscal === "pendentes" && (
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div ref={pgPend.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             {vendasPendentesNota.length === 0 ? (
               <EmptyState icon={FileCheck2} title="Nenhuma venda pendente" subtitle="Todas as vendas já têm um rascunho de NF-e gerado." />
             ) : (
               <div className="divide-y divide-stone-100">
-                {vendasPendentesNota.map((v) => {
+                {pgPend.itens.map((v) => {
                   const cliente = v.clienteId ? clientesPorId[v.clienteId] : null;
                   return (
                     <div key={v.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
@@ -83,18 +88,19 @@ export function FiscalView({
                     </div>
                   );
                 })}
+                <Paginacao pg={pgPend} rotulo="vendas" />
               </div>
             )}
           </div>
         )}
 
         {subFiscal === "rascunhos" && (
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div ref={pgNotas.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             {notasComVenda.length === 0 ? (
               <EmptyState icon={FileText} title="Nenhum rascunho gerado" subtitle="Gere rascunhos a partir das vendas pendentes na aba anterior." />
             ) : (
               <div className="divide-y divide-stone-100">
-                {notasComVenda.map((n) => (
+                {pgNotas.itens.map((n) => (
                   <button
                     key={n.id}
                     onClick={() => setNotaPreview(n)}
@@ -112,6 +118,7 @@ export function FiscalView({
                     </div>
                   </button>
                 ))}
+                <Paginacao pg={pgNotas} rotulo="rascunhos" />
               </div>
             )}
           </div>

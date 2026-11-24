@@ -1,6 +1,8 @@
 import { Factory, Building2, Users, Phone, Pencil, Trash2 } from "lucide-react";
 import { KpiCard } from "../../components/ui/KpiCard";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 import { iniciais } from "../../utils/format";
 import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 
@@ -8,9 +10,11 @@ export function FornecedoresView({
   barraBusca,
   fornecedores,
   fornecedoresFiltrados,
+  chavePaginacao,
   setConfirmacao,
   setFormFornecedor,
 }) {
+  const pg = usePaginacao(fornecedoresFiltrados, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -19,7 +23,7 @@ export function FornecedoresView({
         <KpiCard label="Pessoas físicas" valor={fornecedores.filter((f) => f.tipo === "PF").length} icon={Users} tom="bg-amber-50 text-amber-700" />
       </div>
       {barraBusca}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         {fornecedoresFiltrados.length === 0 ? (
           <EmptyState
             icon={Factory}
@@ -42,7 +46,7 @@ export function FornecedoresView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {fornecedoresFiltrados.map((f) => (
+                {pg.itens.map((f) => (
                   <tr key={f.id} className="group hover:bg-stone-50/70 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
@@ -77,7 +81,7 @@ export function FornecedoresView({
             </table>
 
             <div className="divide-y divide-stone-100 md:hidden">
-              {fornecedoresFiltrados.map((f) => (
+              {pg.itens.map((f) => (
                 <div key={f.id} className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
@@ -106,6 +110,7 @@ export function FornecedoresView({
                 </div>
               ))}
             </div>
+            <Paginacao pg={pg} rotulo="fornecedores" />
           </>
         )}
       </div>

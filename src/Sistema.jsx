@@ -793,6 +793,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "produtos" && (
             <ProdutosView
+              chavePaginacao={busca}
               barraBusca={barraBusca}
               fornecedoresPorId={fornecedoresPorId}
               produtos={produtos}
@@ -806,6 +807,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "clientes" && (
             <ClientesView
+              chavePaginacao={busca}
               barraBusca={barraBusca}
               clientes={clientes}
               clientesFiltrados={clientesFiltrados}
@@ -816,6 +818,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "fornecedores" && (
             <FornecedoresView
+              chavePaginacao={busca}
               barraBusca={barraBusca}
               fornecedores={fornecedores}
               fornecedoresFiltrados={fornecedoresFiltrados}
@@ -826,6 +829,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "estoque" && (
             <EstoqueView
+              chavePaginacao={`${busca}|${subEstoque}`}
               barraBusca={barraBusca}
               movimentacoesFiltradas={movimentacoesFiltradas}
               movimentacoesHoje={movimentacoesHoje}
@@ -841,6 +845,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "financeiro" && (
             <FinanceiroView
+              chavePaginacao={`${busca}|${filtroFinanceiro}`}
               aPagar={aPagar}
               aReceber={aReceber}
               alternarPago={alternarPago}
@@ -858,6 +863,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "entregas" && (
             <EntregasView
+              chavePaginacao={`${busca}|${filtroEntrega}`}
               avancarStatusEntrega={avancarStatusEntrega}
               barraBusca={barraBusca}
               cancelarEntrega={cancelarEntrega}
@@ -875,6 +881,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "compras" && (
             <ComprasView
+              chavePaginacao={`${busca}|${filtroPedido}`}
               barraBusca={barraBusca}
               filtroPedido={filtroPedido}
               fornecedoresPorId={fornecedoresPorId}
@@ -941,6 +948,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "fiscal" && (
             <FiscalView
+              chavePaginacao={subFiscal}
               clientesPorId={clientesPorId}
               empresaFiscal={empresaFiscal}
               gerarRascunhoNota={gerarRascunhoNota}
@@ -957,6 +965,7 @@ export default function Sistema({ userId, email, onSair }) {
           {aba === "relatorios" && <RelatoriosView podeVer={podeVer} />}
           {aba === "usuarios" && (
             <UsuariosView
+              chavePaginacao={subUsuarios}
               barraBusca={barraBusca}
               papeis={papeis}
               papeisPorId={papeisPorId}

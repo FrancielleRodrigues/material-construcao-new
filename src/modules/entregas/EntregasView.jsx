@@ -3,6 +3,8 @@ import { KpiCard } from "../../components/ui/KpiCard";
 import { STATUS_ENTREGA } from "../../data/constantes";
 import { cn, hojeISO, formatarData } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 import { StatusEntregaChip } from "./entregasUi";
 
 export function EntregasView({
@@ -13,12 +15,14 @@ export function EntregasView({
   entregasAtrasadas,
   entregasEmRota,
   entregasFiltradas,
+  chavePaginacao,
   entregasHoje,
   entregasPendentes,
   filtroEntrega,
   setFiltroEntrega,
   setFormEntrega,
 }) {
+  const pg = usePaginacao(entregasFiltradas, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -43,7 +47,7 @@ export function EntregasView({
       </div>
       {barraBusca}
       <div className="space-y-4">
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        <div ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           {entregasFiltradas.length === 0 ? (
             <EmptyState
               icon={Truck}
@@ -54,7 +58,7 @@ export function EntregasView({
             />
           ) : (
             <div className="divide-y divide-stone-100">
-              {entregasFiltradas.map((e) => {
+              {pg.itens.map((e) => {
                 const cliente = e.clienteId ? clientesPorId[e.clienteId] : null;
                 const atrasada = (e.status === "pendente" || e.status === "em_rota") && e.dataPrevista < hojeISO();
                 return (
@@ -102,6 +106,7 @@ export function EntregasView({
               })}
             </div>
           )}
+          <Paginacao pg={pg} rotulo="entregas" />
         </div>
       </div>
     </>

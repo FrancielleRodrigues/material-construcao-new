@@ -2,6 +2,8 @@ import { PackageOpen, Wallet, AlertTriangle, PackageCheck, CalendarDays, Pencil,
 import { KpiCard } from "../../components/ui/KpiCard";
 import { moeda, cn, hojeISO, formatarData } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 
 export function ComprasView({
   barraBusca,
@@ -9,6 +11,7 @@ export function ComprasView({
   fornecedoresPorId,
   pedidosAtrasados,
   pedidosFiltrados,
+  chavePaginacao,
   pedidosPendentesCount,
   registrarRecebimento,
   setConfirmacao,
@@ -19,6 +22,7 @@ export function ComprasView({
   totalPedido,
   valorPedidosPendentes,
 }) {
+  const pg = usePaginacao(pedidosFiltrados, { chave: chavePaginacao });
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
@@ -55,7 +59,7 @@ export function ComprasView({
         )}
       </div>
       {barraBusca}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div ref={pg.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         {pedidosFiltrados.length === 0 ? (
           <EmptyState
             icon={PackageOpen}
@@ -66,7 +70,7 @@ export function ComprasView({
           />
         ) : (
           <div className="divide-y divide-stone-100">
-            {pedidosFiltrados.map((p) => {
+            {pg.itens.map((p) => {
               const fornecedor = fornecedoresPorId[p.fornecedorId];
               const atrasado = p.status === "pendente" && p.dataPrevista < hojeISO();
               return (
@@ -124,6 +128,7 @@ export function ComprasView({
                 </div>
               );
             })}
+            <Paginacao pg={pg} rotulo="pedidos" />
           </div>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { Lock, UserCog, Plus, Pencil, Trash2, ScrollText } from "lucide-react";
 import { cn, iniciais } from "../../utils/format";
 import { MODULOS_PERMISSAO } from "../../data/constantes";
+import { usePaginacao } from "../../hooks/usePaginacao";
+import { Paginacao } from "../../components/Paginacao";
 
 const ROTULO_TABELA = {
   produtos: "Produto", clientes: "Cliente", fornecedores: "Fornecedor", lancamentos: "Lançamento",
@@ -39,7 +41,10 @@ export function UsuariosView({
   subUsuarios,
   usuarioLogadoId,
   usuarios,
+  chavePaginacao,
 }) {
+  const pgUsuarios = usePaginacao(usuarios, { chave: chavePaginacao });
+  const pgAuditoria = usePaginacao(auditoria, { chave: chavePaginacao });
   return (
     <>
       {barraBusca}
@@ -71,7 +76,7 @@ export function UsuariosView({
         </div>
 
         {subUsuarios === "usuarios" && (
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div ref={pgUsuarios.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="flex justify-end p-3 border-b border-stone-100">
               <button
                 onClick={() => setFormUsuario({})}
@@ -81,7 +86,7 @@ export function UsuariosView({
               </button>
             </div>
             <div className="divide-y divide-stone-100">
-              {usuarios.map((u) => (
+              {pgUsuarios.itens.map((u) => (
                 <div key={u.id} className="flex items-center justify-between gap-3 p-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold flex items-center justify-center shrink-0">
@@ -112,12 +117,13 @@ export function UsuariosView({
                   </div>
                 </div>
               ))}
+              <Paginacao pg={pgUsuarios} rotulo="usuários" />
             </div>
           </div>
         )}
 
         {subUsuarios === "auditoria" && podeAuditar && (
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div ref={pgAuditoria.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <p className="text-xs text-stone-500 px-4 py-3 border-b border-stone-100">
               Últimas 300 alterações em cadastros, financeiro, entregas, compras e usuários. O estoque tem histórico próprio em Estoque → Histórico.
             </p>
@@ -125,7 +131,7 @@ export function UsuariosView({
               <p className="text-sm text-stone-400 p-6 text-center">Nenhuma alteração registrada ainda.</p>
             ) : (
               <div className="divide-y divide-stone-100">
-                {auditoria.map((a) => (
+                {pgAuditoria.itens.map((a) => (
                   <div key={a.id} className="px-4 py-3">
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="text-sm text-stone-800 min-w-0">
@@ -140,6 +146,7 @@ export function UsuariosView({
                     {resumoAuditoria(a) && <p className="text-xs text-stone-500 mt-0.5 break-words">{resumoAuditoria(a)}</p>}
                   </div>
                 ))}
+                <Paginacao pg={pgAuditoria} rotulo="alterações" />
               </div>
             )}
           </div>
