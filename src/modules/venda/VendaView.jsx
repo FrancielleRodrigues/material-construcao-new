@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScanLine, Camera, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
+import { ScanLine, ScanBarcode, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
 import { Campo } from "../../components/ui/Campo";
 import { cn, moeda, formatarEndereco } from "../../utils/format";
 import { inputClasses } from "../../components/ui/inputClasses";
@@ -175,8 +175,9 @@ export function VendaView({
                     onClick={() => setCameraAberta(true)}
                     className="shrink-0 flex items-center justify-center gap-1.5 border border-teal-800 text-teal-800 hover:bg-teal-50 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
                     aria-label="Ler código com a câmera"
+                    title="Escanear o código de barras com a câmera do celular"
                   >
-                    <Camera size={16} /> <span className="hidden sm:inline">Câmera</span>
+                    <ScanBarcode size={16} /> Escanear
                   </button>
                 </div>
               </div>

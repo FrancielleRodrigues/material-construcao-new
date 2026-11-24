@@ -58,7 +58,7 @@ test("Cadastro: câmera lê o código e preenche o campo; Esc fecha só a câmer
   await p.getByRole("button", { name: "Ler código de barras com a câmera" }).click();
   await p.getByTestId("leitor-camera").waitFor();
   await p.waitForFunction(() => document.querySelector('[data-testid="leitor-camera"]') === null, null, { timeout: 30000 });
-  assert.equal(await p.getByPlaceholder("Bipe ou digite o código").inputValue(), "7891000100011");
+  assert.equal(await p.getByPlaceholder("Digite ou escaneie").inputValue(), "7891000100011");
 
   // Esc na câmera fecha só a câmera: o formulário e o que foi digitado continuam
   assert.equal(await p.getByRole("button", { name: "Ler SKU com a câmera" }).count(), 0, "só o código de barras tem câmera");
@@ -75,7 +75,7 @@ test("PDV: acha o produto por SKU (sem diferenciar maiúsculas) e pela câmera (
   // dá ao Cimento um EAN válido e um SKU, pelo próprio cadastro
   await aba(p, "Produtos");
   await p.locator("main tr").filter({ hasText: "Cimento CP-II 50kg" }).locator("button").first().click();
-  await p.getByPlaceholder("Bipe ou digite o código").fill("7891000100011");
+  await p.getByPlaceholder("Digite ou escaneie").fill("7891000100011");
   await p.getByPlaceholder("Ex: CIM-CP2-50").fill("CIM-50");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.waitForFunction(async () => (await (await window.__db).query("select sku from produtos where nome = 'Cimento CP-II 50kg'")).rows[0].sku === "CIM-50");

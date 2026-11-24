@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Barcode, Camera, Tag } from "lucide-react";
+import { Barcode, ScanBarcode, Tag } from "lucide-react";
 import { cn } from "../../utils/format";
 import { CATEGORIAS } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
@@ -62,18 +62,20 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
                   value={form.codigoBarras}
                   onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })}
                   className={cn(inputClasses, "pl-8")}
-                  placeholder="Bipe ou digite o código"
+                  placeholder="Digite ou escaneie"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setCamera(true)}
-                className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-600 hover:bg-stone-50"
+                className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-teal-800 text-teal-800 bg-white text-sm font-medium hover:bg-teal-50 whitespace-nowrap"
                 aria-label="Ler código de barras com a câmera"
+                title="Escanear o código de barras com a câmera do celular"
               >
-                <Camera size={15} /> <span className="hidden sm:inline">Câmera</span>
+                <ScanBarcode size={16} /> Escanear
               </button>
             </div>
+            <p className="text-xs text-stone-400 mt-1.5">Digite, use o leitor ou toque em <strong className="font-semibold text-stone-500">Escanear</strong> para ler pela câmera.</p>
           </Campo>
           <Campo label="SKU (código interno)">
             <div style={{ position: "relative" }}>

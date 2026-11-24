@@ -106,12 +106,12 @@ test("Produtos: cadastrar (sem campo de quantidade), código de barras duplicado
   await p.getByRole("button", { name: /Novo|Nova/ }).first().click();
   assert.equal(await p.locator('label:has-text("Quantidade em estoque")').count(), 0);
   await p.getByPlaceholder("Ex: Cimento CP-II 50kg").fill("Areia média m³");
-  await p.getByPlaceholder("Bipe ou digite o código").fill("7891000100016"); // já existe
+  await p.getByPlaceholder("Digite ou escaneie").fill("7891000100016"); // já existe
   await p.getByPlaceholder("0,00").first().fill("120");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.getByRole("alert").getByText("Já existe um produto com este código de barras.").waitFor({ timeout: 15000 });
 
-  await p.getByPlaceholder("Bipe ou digite o código").fill("7891000199999");
+  await p.getByPlaceholder("Digite ou escaneie").fill("7891000199999");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.locator("main").getByText("Areia média m³").first().waitFor({ timeout: 15000 });
   assert.deepEqual(await num(p, "select preco::float p, estoque::float e from produtos where nome = 'Areia média m³'"), { p: 120, e: 0 });
