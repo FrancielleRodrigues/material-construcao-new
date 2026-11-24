@@ -10,7 +10,7 @@ import { BuscaFornecedor } from "../../components/BuscaFornecedor";
 
 export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
   const [form, setForm] = useState(
-    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoque: "", estoqueMin: "", codigoBarras: "", fornecedorId: "", custo: "" }
+    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoqueMin: "", codigoBarras: "", fornecedorId: "", custo: "" }
   );
   const [erro, setErro] = useState("");
 
@@ -19,10 +19,10 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
       setErro("Preencha nome e preço.");
       return;
     }
+    const { estoque: _saldo, ...dados } = form; // o saldo não é editado aqui
     onSalvar({
-      ...form,
+      ...dados,
       preco: parseFloat(form.preco) || 0,
-      estoque: parseFloat(form.estoque) || 0,
       estoqueMin: parseFloat(form.estoqueMin) || 0,
       custo: form.custo === "" || form.custo === null || form.custo === undefined ? null : parseFloat(form.custo),
       fornecedorId: form.fornecedorId ? Number(form.fornecedorId) : null,
@@ -108,30 +108,18 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
           <p className="text-xs text-stone-400 mt-1.5">Quanto você paga pelo produto. Usado só para calcular a margem de lucro nos relatórios.</p>
         </Campo>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Campo label="Quantidade em estoque">
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={form.estoque}
-              onChange={(e) => setForm({ ...form, estoque: e.target.value })}
-              className={inputClasses}
-              placeholder="0"
-            />
-          </Campo>
-          <Campo label="Estoque mínimo (alerta)">
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={form.estoqueMin}
-              onChange={(e) => setForm({ ...form, estoqueMin: e.target.value })}
-              className={inputClasses}
-              placeholder="0"
-            />
-          </Campo>
-        </div>
+        <Campo label="Estoque mínimo (alerta)">
+          <input
+            type="number"
+            step="any"
+            min="0"
+            value={form.estoqueMin}
+            onChange={(e) => setForm({ ...form, estoqueMin: e.target.value })}
+            className={inputClasses}
+            placeholder="0"
+          />
+          <p className="text-xs text-stone-400 mt-1.5">A quantidade em estoque é lançada na aba Estoque (entrada, saída ou ajuste).</p>
+        </Campo>
 
         {erro && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{erro}</p>

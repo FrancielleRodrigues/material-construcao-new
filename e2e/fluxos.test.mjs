@@ -100,31 +100,34 @@ test("Compras: registrar recebimento dá entrada no estoque e cria a despesa", a
   assert.equal((await num(p, "select count(*)::int n from movimentacoes where motivo = 'compra'")).n, 2);
 });
 
-test("Produtos: cadastrar, código de barras duplicado dá aviso, editar estoque gera ajuste", async () => {
+test("Produtos: cadastrar (sem campo de quantidade), código de barras duplicado dá aviso, editar não mexe no saldo", async () => {
   const p = await logar();
   await aba(p, "Produtos");
   await p.getByRole("button", { name: /Novo|Nova/ }).first().click();
+  assert.equal(await p.locator('label:has-text("Quantidade em estoque")').count(), 0);
   await p.getByPlaceholder("Ex: Cimento CP-II 50kg").fill("Areia média m³");
   await p.getByPlaceholder("Bipe ou digite o código").fill("7891000100016"); // já existe
   await p.getByPlaceholder("0,00").first().fill("120");
-  await p.locator('label:has-text("Quantidade em estoque") + input').fill("30");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.getByRole("alert").getByText("Já existe um produto com este código de barras.").waitFor({ timeout: 15000 });
 
   await p.getByPlaceholder("Bipe ou digite o código").fill("7891000199999");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.locator("main").getByText("Areia média m³").first().waitFor({ timeout: 15000 });
-  assert.deepEqual(await num(p, "select preco::float p, estoque::float e from produtos where nome = 'Areia média m³'"), { p: 120, e: 30 });
+  assert.deepEqual(await num(p, "select preco::float p, estoque::float e from produtos where nome = 'Areia média m³'"), { p: 120, e: 0 });
   const idAreia = "(select id from produtos where nome = 'Areia média m³')";
-  assert.equal((await num(p, `select observacao from movimentacoes where produto_id = ${idAreia}`)).observacao, "Estoque inicial");
+  assert.equal((await num(p, `select count(*)::int n from movimentacoes where produto_id = ${idAreia}`)).n, 0);
 
-  // editar o estoque pelo cadastro vira movimento de ajuste (saldo continua batendo com o histórico)
+  // o saldo entra pelo módulo Estoque; editar o cadastro depois não gera ajuste nem altera o saldo
+  await p.evaluate(async () => {
+    const db = await window.__db;
+    await db.exec("select set_config('app.mov_interna','on',false); update produtos set estoque = 30 where nome = 'Areia média m³'; select set_config('app.mov_interna','off',false);");
+  });
   await p.locator("main tr").filter({ hasText: "Areia média m³" }).locator("button").first().click();
-  await p.locator('label:has-text("Quantidade em estoque") + input').fill("22");
+  await p.getByPlaceholder("0,00").first().fill("125");
   await p.getByRole("button", { name: "Salvar" }).click();
-  await p.waitForFunction(async () => (await (await window.__db).query("select estoque::float e from produtos where nome = 'Areia média m³'")).rows[0].e === 22);
-  assert.deepEqual(await num(p, `select tipo, quantidade::float q, motivo from movimentacoes where produto_id = ${idAreia} order by id desc limit 1`), { tipo: "saida", q: 8, motivo: "ajuste" });
-  assert.equal((await num(p, `select (sum(case when tipo = 'entrada' then quantidade else -quantidade end))::float s from movimentacoes where produto_id = ${idAreia}`)).s, 22);
+  await p.waitForFunction(async () => (await (await window.__db).query("select preco::float p from produtos where nome = 'Areia média m³'")).rows[0].p === 125);
+  assert.equal((await num(p, "select estoque::float e from produtos where nome = 'Areia média m³'")).e, 30);
 });
 
 test("Financeiro: marcar como pago grava a data e atualiza a tela", async () => {

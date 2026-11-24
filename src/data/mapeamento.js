@@ -37,7 +37,8 @@ export const produtos = {
   }),
   para: (p) => ({
     nome: p.nome, categoria: texto(p.categoria), unidade: p.unidade || "un", preco: Number(p.preco) || 0,
-    estoque: Number(p.estoque) || 0, estoque_min: Number(p.estoqueMin) || 0,
+    // o saldo só muda por movimentação (módulo Estoque); o cadastro do produto não envia estoque
+    estoque_min: Number(p.estoqueMin) || 0,
     codigo_barras: vazioParaNulo(p.codigoBarras), fornecedor_id: numeroOuNulo(p.fornecedorId),
     custo: numeroOuNulo(p.custo),
   }),
