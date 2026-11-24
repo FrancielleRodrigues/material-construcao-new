@@ -153,6 +153,7 @@ export function montarPedidos(linhas, itens) {
   return linhas.map((r) => ({
     id: r.id, numero: r.numero, fornecedorId: r.fornecedor_id, data: r.data, dataPrevista: r.data_prevista || "",
     status: r.status, dataRecebimento: r.data_recebimento, observacao: r.observacao, itens: porPedido[r.id] || [],
+    chaveAcesso: r.chave_acesso || "", numeroNota: r.numero_nota || "",
   }));
 }
 

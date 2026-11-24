@@ -1,4 +1,4 @@
-import { PackageOpen, Wallet, AlertTriangle, PackageCheck, CalendarDays, Pencil, Trash2 } from "lucide-react";
+import { PackageOpen, Wallet, AlertTriangle, PackageCheck, CalendarDays, Pencil, Trash2, FileUp, FileText } from "lucide-react";
 import { KpiCard } from "../../components/ui/KpiCard";
 import { moeda, cn, hojeISO, formatarData } from "../../utils/format";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -14,6 +14,8 @@ export function ComprasView({
   setConfirmacao,
   setFiltroPedido,
   setFormPedido,
+  podeImportar,
+  setImportandoNota,
   totalPedido,
   valorPedidosPendentes,
 }) {
@@ -24,7 +26,8 @@ export function ComprasView({
         <KpiCard label="Valor pendente" valor={moeda(valorPedidosPendentes)} icon={Wallet} tom="bg-teal-50 text-teal-700" />
         <KpiCard label="Atrasados" valor={pedidosAtrasados} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
       </div>
-      <div className="flex gap-2 p-1 bg-stone-100 rounded-lg overflow-x-auto mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+      <div className="flex gap-2 p-1 bg-stone-100 rounded-lg overflow-x-auto flex-1 min-w-0">
         {[
           { id: "todos", label: "Todos" },
           { id: "pendente", label: "Pendentes" },
@@ -41,6 +44,15 @@ export function ComprasView({
             {f.label}
           </button>
         ))}
+      </div>
+        {podeImportar && (
+          <button
+            onClick={() => setImportandoNota(true)}
+            className="shrink-0 flex items-center justify-center gap-1.5 border border-teal-800 text-teal-800 hover:bg-teal-50 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+          >
+            <FileUp size={15} /> Importar XML da nota
+          </button>
+        )}
       </div>
       {barraBusca}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
@@ -69,6 +81,11 @@ export function ComprasView({
                         {p.status === "recebido" ? <PackageCheck size={11} /> : <PackageOpen size={11} />}
                         {p.status === "recebido" ? "Recebido" : "Pendente"}
                       </span>
+                      {p.numeroNota && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full">
+                          <FileText size={11} /> NF-e {p.numeroNota}
+                        </span>
+                      )}
                       {atrasado && (
                         <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
                           <AlertTriangle size={11} /> Atrasado

@@ -15,6 +15,7 @@ function traduzir(error) {
     if (msg.includes("clientes_documento_uniq")) return "Já existe um cliente com este CPF/CNPJ.";
     if (msg.includes("fornecedores_documento_uniq")) return "Já existe um fornecedor com este CPF/CNPJ.";
     if (msg.includes("produtos_codigo_barras_uniq")) return "Já existe um produto com este código de barras.";
+    if (msg.includes("pedidos_compra_chave_uniq")) return "Esta nota já foi importada.";
     if (msg.includes("produtos_sku_uniq")) return "Já existe um produto com este SKU.";
     if (msg.includes("já é o código de barras") || msg.includes("já é o SKU")) return error.message;
     if (msg.includes("usuarios_email_uniq")) return "Já existe um usuário com este e-mail.";
@@ -190,6 +191,7 @@ export const salvarPedido = (p) =>
     })
   );
 
+export const importarNotaCompra = (payload) => chamar(supabase.rpc("importar_nota_compra", { p_nota: payload }));
 export const registrarRecebimento = (pedidoId) => chamar(supabase.rpc("registrar_recebimento", { p_pedido_id: pedidoId }));
 
 export const registrarMovimentacao = (m) =>

@@ -12,6 +12,7 @@ import { FornecedorForm } from "./modules/fornecedores/FornecedorForm";
 import { ProdutoForm } from "./modules/produtos/ProdutoForm";
 import { MovimentacaoForm } from "./modules/estoque/MovimentacaoForm";
 import { PedidoForm } from "./modules/compras/PedidoForm";
+import { ImportarNotaModal } from "./modules/compras/ImportarNotaModal";
 import { UsuarioForm } from "./modules/usuarios/UsuarioForm";
 import { PapelForm } from "./modules/usuarios/PapelForm";
 import { statusLancamento } from "./modules/financeiro/financeiroUi";
@@ -38,6 +39,7 @@ export default function Sistema({ userId, email, onSair }) {
   const [fornecedores, setFornecedores] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [formPedido, setFormPedido] = useState(null);
+  const [importandoNota, setImportandoNota] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
   const [papeis, setPapeis] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
@@ -320,6 +322,12 @@ export default function Sistema({ userId, email, onSair }) {
   }
 
   // Entrada no estoque + despesa no Financeiro: feito numa transação no banco.
+  // Fornecedor, produtos novos, pedido recebido, estoque e parcelas: tudo numa transação no banco.
+  async function importarNota(payload) {
+    const ok = await executar(() => api.importarNotaCompra(payload), ["pedidos", "produtos", "movimentacoes", "lancamentos", "fornecedores"]);
+    if (ok) setImportandoNota(false);
+  }
+
   async function registrarRecebimento(pedido) {
     await executar(() => api.registrarRecebimento(pedido.id), ["pedidos", "produtos", "movimentacoes", "lancamentos"]);
   }
@@ -877,6 +885,8 @@ export default function Sistema({ userId, email, onSair }) {
               setConfirmacao={setConfirmacao}
               setFiltroPedido={setFiltroPedido}
               setFormPedido={setFormPedido}
+              podeImportar={podeEditar("compras")}
+              setImportandoNota={setImportandoNota}
               totalPedido={totalPedido}
               valorPedidosPendentes={valorPedidosPendentes}
               barraBusca={barraBusca}
@@ -977,6 +987,16 @@ export default function Sistema({ userId, email, onSair }) {
           produtos={produtos}
           onSalvar={salvarPedido}
           onCancelar={() => setFormPedido(null)}
+        />
+      )}
+      {importandoNota && (
+        <ImportarNotaModal
+          produtos={produtos}
+          fornecedores={fornecedores}
+          pedidos={pedidos}
+          cnpjEmpresa={empresaFiscal.cnpj}
+          onImportar={importarNota}
+          onCancelar={() => setImportandoNota(false)}
         />
       )}
       {formUsuario !== null && (

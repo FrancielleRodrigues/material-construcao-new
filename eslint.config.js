@@ -15,7 +15,7 @@ export default [
         ...globals.es2021,
         window: "readonly", document: "readonly", console: "readonly", fetch: "readonly",
         alert: "readonly", confirm: "readonly", navigator: "readonly",
-        setTimeout: "readonly", clearTimeout: "readonly", setInterval: "readonly", clearInterval: "readonly", URL: "readonly", URLSearchParams: "readonly", Blob: "readonly",
+        setTimeout: "readonly", clearTimeout: "readonly", setInterval: "readonly", clearInterval: "readonly", URL: "readonly", URLSearchParams: "readonly", DOMParser: "readonly", Blob: "readonly",
       },
       parserOptions: { ecmaFeatures: { jsx: true }, sourceType: "module" },
     },

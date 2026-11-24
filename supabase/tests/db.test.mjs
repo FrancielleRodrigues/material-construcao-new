@@ -129,7 +129,7 @@ test("só as funções de negócio ficam expostas na API; as de permissão ficam
   const expostas = await q(`select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prokind = 'f' and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute')
     order by 1`);
-  assert.deepEqual(expostas.map((r) => r.proname), ["finalizar_venda", "gerar_rascunho_nota", "registrar_movimentacao", "registrar_recebimento", "salvar_pedido_compra"]);
+  assert.deepEqual(expostas.map((r) => r.proname), ["finalizar_venda", "gerar_rascunho_nota", "importar_nota_compra", "registrar_movimentacao", "registrar_recebimento", "salvar_pedido_compra"]);
   assert.equal((await q(`select count(*)::int n from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute')`))[0].n, 0);
 });
@@ -422,4 +422,97 @@ test("SKU: único sem diferenciar maiúsculas e não pode repetir o código de b
     await erro(q(`insert into produtos (nome, preco, sku) values ('X', 1, 'Z')`), "permission denied|row-level security");
   });
   await q(`delete from produtos where nome in ('Areia', 'Sem sku 1', 'Sem sku 2')`);
+});
+
+const CHAVE = "35261145678912000133550010000012341000012345";
+const notaBase = (extra = {}) => ({
+  chave: CHAVE, numero_nf: "1234", serie: "1", data_emissao: "2026-11-20", atualizar_custo: true,
+  fornecedor: { documento: "11222333000181", nome: "Nova Distribuidora Ltda", telefone: "(11) 4000-1000", endereco: { cidade: "São Paulo", uf: "SP" } },
+  itens: [
+    { produto_id: null, nome: "Cimento", quantidade: 10, preco_unitario: 31.5 },
+    { nome: "Rejunte 1kg", quantidade: 20, preco_unitario: 4.1234, novo_produto: { nome: "Rejunte 1kg", unidade: "un", categoria: "acabamento", preco: 9.9, sku: "REJ-1" } },
+  ],
+  parcelas: [{ vencimento: "2026-12-20", valor: 300 }, { vencimento: "2027-01-20", valor: 97.47 }],
+  ...extra,
+});
+
+test("importar NF-e: cadastra fornecedor e produto novo, dá entrada, atualiza custo e cria uma despesa por parcela", async () => {
+  await como("admin@x.com", async () => {
+    const nota = notaBase();
+    nota.itens[0].produto_id = (await q("select id from produtos where nome = 'Cimento'"))[0].id;
+    const estoqueAntes = Number((await q("select estoque from produtos where nome = 'Cimento'"))[0].estoque);
+    const [{ importar_nota_compra: id }] = await q("select public.importar_nota_compra($1::jsonb) as importar_nota_compra", [JSON.stringify(nota)]);
+
+    const forn = (await q("select tipo, nome, documento from fornecedores where documento = '11.222.333/0001-81'"))[0];
+    assert.deepEqual(forn, { tipo: "PJ", nome: "Nova Distribuidora Ltda", documento: "11.222.333/0001-81" });
+
+    const ped = (await q("select status, chave_acesso, numero_nota, data_recebimento is not null as recebido from pedidos_compra where id = $1", [id]))[0];
+    assert.deepEqual(ped, { status: "recebido", chave_acesso: CHAVE, numero_nota: "1234", recebido: true });
+    assert.equal((await q("select count(*)::int n from pedidos_compra_itens where pedido_id = $1", [id]))[0].n, 2);
+    assert.equal(Number((await q("select preco_unitario from pedidos_compra_itens where nome = 'Rejunte 1kg'"))[0].preco_unitario), 4.1234, "custo com 4 casas");
+
+    assert.equal(Number((await q("select estoque from produtos where nome = 'Cimento'"))[0].estoque), estoqueAntes + 10);
+    const rej = (await q("select estoque, custo, preco, sku, categoria from produtos where nome = 'Rejunte 1kg'"))[0];
+    assert.deepEqual({ ...rej, estoque: Number(rej.estoque), custo: Number(rej.custo), preco: Number(rej.preco) }, { estoque: 20, custo: 4.12, preco: 9.9, sku: "REJ-1", categoria: "acabamento" });
+    assert.equal(Number((await q("select custo from produtos where nome = 'Cimento'"))[0].custo), 31.5);
+    assert.equal((await q("select count(*)::int n from movimentacoes where observacao like 'NF-e nº 1234%'"))[0].n, 2);
+
+    const lanc = await q("select descricao, valor::float v, vencimento::text d, pago from lancamentos where descricao like 'NF-e nº 1234%' order by vencimento");
+    assert.deepEqual(lanc, [
+      { descricao: "NF-e nº 1234 - parcela 1/2", v: 300, d: "2026-12-20", pago: false },
+      { descricao: "NF-e nº 1234 - parcela 2/2", v: 97.47, d: "2027-01-20", pago: false },
+    ]);
+
+    // a mesma nota não entra duas vezes
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota)]), "já foi importada");
+  });
+});
+
+test("importar NF-e: usa fornecedor existente pelo CNPJ e, sem duplicatas, cria uma despesa com o total", async () => {
+  await como("admin@x.com", async () => {
+    await q(`insert into fornecedores (tipo, nome, documento) values ('PJ', 'Votoran 2', '45.678.912/0001-33')`);
+    const antes = (await q("select count(*)::int n from fornecedores"))[0].n;
+    const nota = notaBase({ chave: "3".repeat(44), numero_nf: "77", parcelas: [], atualizar_custo: false });
+    nota.fornecedor = { documento: "45.678.912/0001-33", nome: "Outro nome" }; // Votoran, já cadastrado
+    nota.itens = [{ nome: "Torneira", quantidade: 2, preco_unitario: 50, produto_id: (await q("select id from produtos where nome = 'Torneira'"))[0].id }];
+    await q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(nota)]);
+    assert.equal((await q("select count(*)::int n from fornecedores"))[0].n, antes);
+    const l = (await q("select valor::float v, vencimento = public.hoje() as hoje, fornecedor_id from lancamentos where descricao = 'NF-e nº 77'"))[0];
+    assert.equal(l.v, 100);
+    assert.equal(l.hoje, true);
+    assert.equal(l.fornecedor_id, (await q("select id from fornecedores where documento = '45.678.912/0001-33'"))[0].id);
+    assert.equal(Number((await q("select custo from produtos where nome = 'Torneira'"))[0].custo ?? 0), 0, "sem atualizar_custo, o custo fica como está");
+  });
+});
+
+test("importar NF-e é atômico e confere permissões e dados", async () => {
+  const contar = async () => (await q(`select (select count(*) from pedidos_compra)::int p, (select count(*) from fornecedores)::int f,
+    (select count(*) from produtos)::int pr, (select count(*) from lancamentos)::int l, (select count(*) from movimentacoes)::int m`))[0];
+  const antes = await contar();
+  await como("admin@x.com", async () => {
+    const idCimento = (await q("select id from produtos where nome = 'Cimento'"))[0].id;
+    const comProduto = (n) => { n.itens[0].produto_id = idCimento; return n; };
+    // segundo item inválido: nada do primeiro (nem o fornecedor novo, nem o produto novo) pode ficar
+    const ruim = comProduto(notaBase({ chave: "4".repeat(44) }));
+    ruim.fornecedor.documento = "99888777000166";
+    ruim.itens[1].quantidade = 0;
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(ruim)]), "Item da nota inválido");
+    // produto novo sem preço de venda
+    const semPreco = comProduto(notaBase({ chave: "5".repeat(44) }));
+    semPreco.itens = [semPreco.itens[1]];
+    semPreco.itens[0].novo_produto = { ...semPreco.itens[0].novo_produto, preco: 0, sku: "REJ-NOVO" };
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(semPreco)]), "preço de venda");
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(notaBase({ chave: "123" }))]), "Chave de acesso");
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify({ ...notaBase({ chave: "6".repeat(44) }), fornecedor: { documento: "123", nome: "x" } })]), "CNPJ/CPF");
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(notaBase({ chave: "7".repeat(44), itens: [] }))]), "não tem itens");
+  });
+  assert.deepEqual(await contar(), antes);
+  // quem não edita Compras não importa
+  await como("vend@x.com", async () => {
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(notaBase({ chave: "8".repeat(44) }))]), "permissão");
+  });
+  await como("leitor@x.com", async () => {
+    await erro(q("select public.importar_nota_compra($1::jsonb)", [JSON.stringify(notaBase({ chave: "8".repeat(44) }))]), "permissão");
+  });
+  assert.deepEqual(await contar(), antes);
 });
