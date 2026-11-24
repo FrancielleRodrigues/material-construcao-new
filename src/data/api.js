@@ -98,6 +98,40 @@ export async function carregar(nomes) {
   return Object.fromEntries(nomes.map((n, i) => [n, resultados[i]]));
 }
 
+// ---------- relatórios ----------
+
+const LIMITE_RELATORIO = 100000; // linhas; acima disso peça um período menor
+
+// As funções rel_* já devolvem ordenadas; paginamos por faixa de linhas (o servidor limita cada resposta).
+async function listarRpc(nome, args) {
+  const todas = [];
+  for (let ini = 0; ; ini += TAM_PAGINA) {
+    const dados = await chamar(supabase.rpc(nome, args).range(ini, ini + TAM_PAGINA - 1));
+    todas.push(...dados);
+    if (dados.length < TAM_PAGINA) return todas;
+    if (todas.length >= LIMITE_RELATORIO) {
+      throw new ErroApi("Esse período tem dados demais para a tela. Escolha um intervalo menor.");
+    }
+  }
+}
+
+// nome da base → [função do banco, mapeador, usa período?]
+const BASES_RELATORIO = {
+  vendas: ["rel_vendas", M.relatorios.vendas, true],
+  itens: ["rel_itens_vendidos", M.relatorios.itens, true],
+  lancamentos: ["rel_lancamentos", M.relatorios.lancamentos, true],
+  emAberto: ["rel_em_aberto", M.relatorios.lancamentos, false],
+  estoque: ["rel_estoque", M.relatorios.estoque, true],
+  compras: ["rel_compras", M.relatorios.compras, true],
+};
+
+// carregarBaseRelatorio("vendas", { inicio: "2026-10-01", fim: "2026-10-31" }) → linhas
+export async function carregarBaseRelatorio(nome, periodo) {
+  const [funcao, mapear, usaPeriodo] = BASES_RELATORIO[nome];
+  const args = usaPeriodo ? { p_inicio: periodo.inicio, p_fim: periodo.fim } : {};
+  return (await listarRpc(funcao, args)).map(mapear);
+}
+
 // ---------- escrita simples (tabela direta, protegida por RLS) ----------
 
 async function inserir(tabela, linha) {

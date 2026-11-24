@@ -32,3 +32,7 @@ export async function entrar(pagina, email, senha = "senha123") {
 
 export const sql = (pagina, consulta, params = []) =>
   pagina.evaluate(async ([c, p]) => (await (await window.__db).query(c, p)).rows, [consulta, params]);
+
+// Executa SQL (vários comandos) como superusuário no banco de teste da página.
+export const exec = (pagina, texto) =>
+  pagina.evaluate(async (t) => { await (await window.__db).exec(t); }, texto);

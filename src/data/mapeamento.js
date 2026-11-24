@@ -33,12 +33,13 @@ export const produtos = {
   de: (r) => ({
     id: r.id, nome: r.nome, categoria: r.categoria, unidade: r.unidade, preco: Number(r.preco),
     estoque: Number(r.estoque), estoqueMin: Number(r.estoque_min), codigoBarras: r.codigo_barras || "",
-    fornecedorId: r.fornecedor_id ?? null,
+    fornecedorId: r.fornecedor_id ?? null, custo: r.custo === null || r.custo === undefined ? null : Number(r.custo),
   }),
   para: (p) => ({
     nome: p.nome, categoria: texto(p.categoria), unidade: p.unidade || "un", preco: Number(p.preco) || 0,
     estoque: Number(p.estoque) || 0, estoque_min: Number(p.estoqueMin) || 0,
     codigo_barras: vazioParaNulo(p.codigoBarras), fornecedor_id: numeroOuNulo(p.fornecedorId),
+    custo: numeroOuNulo(p.custo),
   }),
 };
 
@@ -104,6 +105,34 @@ export const auditoria = {
   de: (r) => ({
     id: r.id, quando: r.quando, quem: r.quem, tabela: r.tabela, operacao: r.operacao,
     registroId: r.registro_id, antes: r.antes, depois: r.depois,
+  }),
+};
+
+// Bases dos relatórios (funções rel_* do banco). Números chegam como número ou nulo.
+const numOuNulo = (v) => (v === null || v === undefined ? null : Number(v));
+export const relatorios = {
+  vendas: (r) => ({
+    id: r.id, numero: r.numero, data: r.data, clienteId: r.cliente_id, cliente: r.cliente, formaPagamento: r.forma_pagamento,
+    itens: Number(r.itens), subtotal: Number(r.subtotal), desconto: Number(r.desconto), total: Number(r.total),
+    tipoEntrega: r.tipo_entrega, notaGerada: r.nota_gerada,
+  }),
+  itens: (r) => ({
+    vendaId: r.venda_id, numero: r.numero, data: r.data, clienteId: r.cliente_id, cliente: r.cliente, formaPagamento: r.forma_pagamento,
+    produtoId: r.produto_id, produto: r.produto, categoria: r.categoria, unidade: r.unidade, quantidade: Number(r.quantidade),
+    precoUnitario: Number(r.preco_unitario), totalItem: Number(r.total_item), custoUnitario: numOuNulo(r.custo_unitario),
+  }),
+  lancamentos: (r) => ({
+    id: r.id, tipo: r.tipo, descricao: r.descricao, valor: Number(r.valor), vencimento: r.vencimento, pago: r.pago,
+    dataPagamento: r.data_pagamento, clienteId: r.cliente_id, fornecedorId: r.fornecedor_id, parte: r.parte,
+    formaPagamento: r.forma_pagamento, observacao: r.observacao, diasAtraso: Number(r.dias_atraso),
+  }),
+  estoque: (r) => ({
+    id: r.id, nome: r.nome, categoria: r.categoria, unidade: r.unidade, estoque: Number(r.estoque), estoqueMin: Number(r.estoque_min),
+    preco: Number(r.preco), custo: numOuNulo(r.custo), fornecedor: r.fornecedor, vendido: Number(r.vendido), ultimaVenda: r.ultima_venda,
+  }),
+  compras: (r) => ({
+    id: r.id, numero: r.numero, data: r.data, fornecedorId: r.fornecedor_id, fornecedor: r.fornecedor, status: r.status,
+    dataPrevista: r.data_prevista, dataRecebimento: r.data_recebimento, itens: Number(r.itens), total: Number(r.total),
   }),
 };
 

@@ -128,20 +128,48 @@ class Consulta {
   then(ok, falha) { return this.executar().then(ok, falha); }
 }
 
-export const supabase = {
-  from: (tabela) => new Consulta(tabela),
+// Chamada de função (rpc). Funções que devolvem várias linhas aceitam .range(), como no PostgREST;
+// funções que devolvem um valor (ou nada) respondem com o valor.
+class ConsultaRpc {
+  constructor(nome, args) {
+    this.nome = nome;
+    this.args = args;
+    this.faixa = null;
+  }
 
-  async rpc(nome, args = {}) {
+  range(a, b) {
+    this.faixa = [a, b];
+    return this;
+  }
+
+  async executar() {
     try {
-      const chaves = Object.keys(args);
-      const params = chaves.map((c) => (args[c] !== null && typeof args[c] === "object" ? JSON.stringify(args[c]) : args[c]));
-      const lista = chaves.map((c, i) => `${q(c)} => $${i + 1}${args[c] !== null && typeof args[c] === "object" ? "::jsonb" : ""}`).join(", ");
-      const r = await executar(`select ${q(nome)}(${lista}) as r`, params);
-      return { data: r.rows[0]?.r ?? null, error: null };
+      const chaves = Object.keys(this.args);
+      const ehObjeto = (v) => v !== null && typeof v === "object";
+      const params = chaves.map((c) => (ehObjeto(this.args[c]) ? JSON.stringify(this.args[c]) : this.args[c]));
+      const lista = chaves.map((c, i) => `${q(c)} => $${i + 1}${ehObjeto(this.args[c]) ? "::jsonb" : ""}`).join(", ");
+      const db = await pronto;
+      const meta = await db.query("select proretset from pg_proc where proname = $1 limit 1", [this.nome]);
+      const devolveLinhas = Boolean(meta.rows[0]?.proretset);
+      const chamada = `${q(this.nome)}(${lista})`;
+      let sql = devolveLinhas ? `select * from ${chamada}` : `select ${chamada} as r`;
+      if (devolveLinhas && this.faixa) sql += ` limit ${this.faixa[1] - this.faixa[0] + 1} offset ${this.faixa[0]}`;
+      const r = await executar(sql, params);
+      return { data: devolveLinhas ? r.rows : (r.rows[0]?.r ?? null), error: null };
     } catch (e) {
       return { data: null, error: paraErro(e) };
     }
-  },
+  }
+
+  then(ok, falha) {
+    return this.executar().then(ok, falha);
+  }
+}
+
+export const supabase = {
+  from: (tabela) => new Consulta(tabela),
+
+  rpc: (nome, args = {}) => new ConsultaRpc(nome, args),
 
   auth: {
     async getSession() {

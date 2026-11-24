@@ -10,7 +10,7 @@ import { BuscaFornecedor } from "../../components/BuscaFornecedor";
 
 export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
   const [form, setForm] = useState(
-    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoque: "", estoqueMin: "", codigoBarras: "", fornecedorId: "" }
+    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoque: "", estoqueMin: "", codigoBarras: "", fornecedorId: "", custo: "" }
   );
   const [erro, setErro] = useState("");
 
@@ -24,6 +24,7 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
       preco: parseFloat(form.preco) || 0,
       estoque: parseInt(form.estoque) || 0,
       estoqueMin: parseInt(form.estoqueMin) || 0,
+      custo: form.custo === "" || form.custo === null || form.custo === undefined ? null : parseFloat(form.custo),
       fornecedorId: form.fornecedorId ? Number(form.fornecedorId) : null,
     });
   }
@@ -93,6 +94,19 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
             />
           </Campo>
         </div>
+
+        <Campo label="Preço de custo (R$) — opcional">
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={form.custo ?? ""}
+            onChange={(e) => setForm({ ...form, custo: e.target.value })}
+            className={inputClasses}
+            placeholder="0,00"
+          />
+          <p className="text-xs text-stone-400 mt-1.5">Quanto você paga pelo produto. Usado só para calcular a margem de lucro nos relatórios.</p>
+        </Campo>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Campo label="Estoque atual">

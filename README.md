@@ -77,6 +77,7 @@ Depois, no Supabase: *Authentication → URL Configuration* → coloque esse end
 | `npm run dev` | servidor de desenvolvimento |
 | `npm run build` | build de produção |
 | `npm run lint` | ESLint (pega import esquecido, que o build não pega) |
+| `npm run test:unit` | testa os cálculos dos relatórios, a montagem das planilhas e os modelos (sem navegador nem banco) |
 | `npm run test:db` | roda a migração num Postgres local (PGlite) e testa RLS e funções |
 | `npm run test:e2e` | abre o app no Chromium contra um Postgres local com a mesma migração e exercita os fluxos (precisa do Chromium; `CHROMIUM_PATH` se não estiver em `/opt/pw-browsers/chromium`) |
 

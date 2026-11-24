@@ -4,7 +4,7 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 
 ## Estado atual
 
-- Projeto Vite + React + Tailwind v4 + Supabase (`npm run dev`, `build`, `lint`, `test:db`, `test:e2e`). Passo a passo de instalação no `README.md`.
+- Projeto Vite + React + Tailwind v4 + Supabase (`npm run dev`, `build`, `lint`, `test:unit`, `test:db`, `test:e2e`). Passo a passo de instalação no `README.md`.
 - Estrutura em `src/`: `utils/` (formatação, CEP), `hooks/`, `data/` (constantes e dados iniciais), `components/` (UI compartilhada e `ui/`), `modules/<modulo>/` (tela da aba `XView.jsx`, formulários, modais e chips de cada módulo).
 - `src/App.jsx` só decide a tela (config do Supabase → login → sistema). `src/Sistema.jsx` é o shell: menu, estado, handlers. Cada aba é um `XView` com **props explícitas** (a barra de busca mobile chega como `barraBusca`).
 - Dados: `src/data/api.js` (Supabase) + `mapeamento.js` (snake_case ↔ camelCase). O estado das listas em `Sistema.jsx` é um espelho do banco: toda ação passa por `executar(acao, listasParaRecarregar)`, que bloqueia clique duplo, mostra o erro (faixa vermelha) e recarrega as listas afetadas. O formulário só fecha se der certo.
@@ -18,12 +18,13 @@ Sistema de gestão (mini ERP) para loja de material de construção, usado no co
 
 ## Módulos já construídos
 
-Início (dashboard), Clientes, Fornecedores, Compras, Produtos, Venda (PDV), Estoque, Financeiro, Fiscal, Entregas, Usuários.
+Início (dashboard), Clientes, Fornecedores, Compras, Produtos, Venda (PDV), Estoque, Financeiro, Fiscal, Entregas, Relatórios, Usuários.
 
 Integrações entre módulos (já implementadas):
 - Venda finalizada → baixa estoque + cria movimentação + cria receita no Financeiro + (opcional) cria entrega + (opcional) cria rascunho de NF-e.
 - Pedido de compra → "Registrar recebimento" → entrada no estoque + despesa no Financeiro vinculada ao fornecedor.
 - Produto tem fornecedor (opcional); no pedido de compra, os produtos são filtrados pelo fornecedor escolhido.
+- Relatórios (`src/modules/relatorios/`): filtro de período, análises (vendas, produtos/curva ABC, clientes, estoque, financeiro, compras) e exportação da base para Excel (`write-excel-file/universal`, sem Web Workers por causa do CSP; importado sob demanda). Os dados vêm das funções `rel_*` (migração `20261125000000_relatorios`), **SECURITY INVOKER**: valem a permissão `relatorios` E a RLS de cada módulo (quem não vê Financeiro não recebe lançamentos). Cálculos em JS puro (`calculos.js`, testados com `npm run test:unit`). Margem usa `produtos.custo` (opcional) copiado para `vendas_itens.custo_unitario` na venda; vendas antigas sem custo ficam fora da margem. Papéis: admin edita, gerente visualiza, vendedor/caixa sem acesso.
 - Usuários/papéis: matriz de permissão por módulo (sem acesso / visualizar / editar). Menu lateral e botões "+ Novo" respeitam o papel atual. Há um seletor de sessão no rodapé do menu para testar cada papel.
 
 ## Preferências de UX pedidas pela usuária (manter)

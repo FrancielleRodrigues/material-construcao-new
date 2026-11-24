@@ -106,7 +106,7 @@ test("Produtos: cadastrar, código de barras duplicado dá aviso, editar estoque
   await p.getByRole("button", { name: /Novo|Nova/ }).first().click();
   await p.getByPlaceholder("Ex: Cimento CP-II 50kg").fill("Areia média m³");
   await p.getByPlaceholder("Bipe ou digite o código").fill("7891000100016"); // já existe
-  await p.getByPlaceholder("0,00").fill("120");
+  await p.getByPlaceholder("0,00").first().fill("120");
   await p.locator('label:has-text("Estoque atual") + input').fill("30");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.getByRole("alert").getByText("Já existe um produto com este código de barras.").waitFor({ timeout: 15000 });
@@ -280,7 +280,7 @@ test("Auditoria: administrador vê quem alterou o quê; vendedor não vê a aba"
   const p = await logar();
   await aba(p, "Produtos");
   await p.locator("main tr").filter({ hasText: "Torneira de parede" }).locator("button").first().click();
-  await p.getByPlaceholder("0,00").fill("99.9");
+  await p.getByPlaceholder("0,00").first().fill("99.9");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.waitForFunction(async () => (await (await window.__db).query("select preco::float p from produtos where id = 5")).rows[0].p === 99.9);
 

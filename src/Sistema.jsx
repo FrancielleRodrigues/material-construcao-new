@@ -29,6 +29,7 @@ import { ComprasView } from "./modules/compras/ComprasView";
 import { VendaView } from "./modules/venda/VendaView";
 import { FiscalView } from "./modules/fiscal/FiscalView";
 import { UsuariosView } from "./modules/usuarios/UsuariosView";
+import { RelatoriosView } from "./modules/relatorios/RelatoriosView";
 import { EntregaForm } from "./modules/entregas/EntregaForm";
 
 export default function Sistema({ userId, email, onSair }) {
@@ -510,7 +511,7 @@ export default function Sistema({ userId, email, onSair }) {
     );
   }
 
-  const barraBusca = !isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && (
+  const barraBusca = !isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "usuarios" && (
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <div style={{ position: "relative" }} className="flex-1 sm:max-w-sm">
           <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -686,7 +687,7 @@ export default function Sistema({ userId, email, onSair }) {
               <div className="min-w-0">
                 {aba !== "inicio" && (
                   <div className="flex items-center gap-1.5 text-xs text-stone-400 mb-1">
-                    <span>Cadastros</span>
+                    <span>{aba === "relatorios" ? "Análises" : "Cadastros"}</span>
                     <ChevronRight size={12} />
                     <span className="text-stone-600 font-medium">{TITULOS_ABA[aba]}</span>
                   </div>
@@ -697,7 +698,7 @@ export default function Sistema({ userId, email, onSair }) {
               </div>
             </div>
 
-            {isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && (
+            {isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "usuarios" && (
               <div className="flex items-center gap-3 shrink-0">
                 <div style={{ position: "relative", width: "260px" }}>
                   <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -939,6 +940,7 @@ export default function Sistema({ userId, email, onSair }) {
               vendasPendentesNota={vendasPendentesNota}
             />
           )}
+          {aba === "relatorios" && <RelatoriosView podeVer={podeVer} />}
           {aba === "usuarios" && (
             <UsuariosView
               barraBusca={barraBusca}
