@@ -1,9 +1,11 @@
-import { ScanLine, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
+import { useState } from "react";
+import { ScanLine, Camera, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
 import { Campo } from "../../components/ui/Campo";
 import { cn, moeda, formatarEndereco } from "../../utils/format";
 import { inputClasses } from "../../components/ui/inputClasses";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FORMAS_PAGAMENTO } from "../../data/constantes";
+import { LeitorCodigo } from "../../components/LeitorCodigo";
 
 export function VendaView({
   adicionarAoCarrinho,
@@ -50,6 +52,7 @@ export function VendaView({
   totalComDesconto,
   valorDesconto,
 }) {
+  const [cameraAberta, setCameraAberta] = useState(false);
   return (
     <>
       {etapaVenda === "inicio" && (
@@ -139,7 +142,7 @@ export function VendaView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
-              <p className="text-xs font-semibold text-teal-800 mb-3">1. Produtos <span className="text-stone-400 font-normal normal-case">— bipe ou digite o código, o estoque é validado automaticamente</span></p>
+              <p className="text-xs font-semibold text-teal-800 mb-3">1. Produtos <span className="text-stone-400 font-normal normal-case">— bipe, leia pela câmera ou digite o código de barras ou SKU, o estoque é validado automaticamente</span></p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div style={{ position: "relative" }} className="flex-1">
                   <ScanLine size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -147,7 +150,7 @@ export function VendaView({
                     value={bipCodigo}
                     onChange={(e) => { setBipCodigo(e.target.value); setErroBip(""); }}
                     onKeyDown={(e) => { if (e.key === "Enter") adicionarAoCarrinho(); }}
-                    placeholder="Bipe ou digite o código de barras"
+                    placeholder="Bipe ou digite o código de barras ou SKU"
                     className="w-full pl-9 pr-3 py-2.5 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition-shadow"
                   />
                 </div>
@@ -162,10 +165,18 @@ export function VendaView({
                     className="shrink-0 px-3 py-2.5 border border-stone-300 rounded-lg text-sm text-center outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition-shadow"
                   />
                   <button
-                    onClick={adicionarAoCarrinho}
+                    onClick={() => adicionarAoCarrinho()}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
                   >
                     <Plus size={16} /> Adicionar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCameraAberta(true)}
+                    className="shrink-0 flex items-center justify-center gap-1.5 border border-teal-800 text-teal-800 hover:bg-teal-50 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                    aria-label="Ler código com a câmera"
+                  >
+                    <Camera size={16} /> <span className="hidden sm:inline">Câmera</span>
                   </button>
                 </div>
               </div>
@@ -173,7 +184,7 @@ export function VendaView({
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-3">{erroBip}</p>
               )}
               <p className="text-xs text-stone-400 mt-3">
-                Códigos de exemplo: {produtos.slice(0, 3).map((p) => p.codigoBarras).join(" · ")}
+                Exemplos: {produtos.slice(0, 3).map((p) => p.codigoBarras || p.sku).filter(Boolean).join(" · ")}
               </p>
             </div>
   
@@ -418,6 +429,14 @@ export function VendaView({
             </button>
           </div>
         </div>
+      )}
+      {cameraAberta && (
+        <LeitorCodigo
+          continuo
+          titulo="Ler produtos pela câmera"
+          onFechar={() => setCameraAberta(false)}
+          onLer={(codigo) => adicionarAoCarrinho(codigo)}
+        />
       )}
     </>
   );

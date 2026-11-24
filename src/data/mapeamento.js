@@ -32,14 +32,14 @@ export const fornecedores = {
 export const produtos = {
   de: (r) => ({
     id: r.id, nome: r.nome, categoria: r.categoria, unidade: r.unidade, preco: Number(r.preco),
-    estoque: Number(r.estoque), estoqueMin: Number(r.estoque_min), codigoBarras: r.codigo_barras || "",
+    estoque: Number(r.estoque), estoqueMin: Number(r.estoque_min), codigoBarras: r.codigo_barras || "", sku: r.sku || "",
     fornecedorId: r.fornecedor_id ?? null, custo: r.custo === null || r.custo === undefined ? null : Number(r.custo),
   }),
   para: (p) => ({
     nome: p.nome, categoria: texto(p.categoria), unidade: p.unidade || "un", preco: Number(p.preco) || 0,
     // o saldo só muda por movimentação (módulo Estoque); o cadastro do produto não envia estoque
     estoque_min: Number(p.estoqueMin) || 0,
-    codigo_barras: vazioParaNulo(p.codigoBarras), fornecedor_id: numeroOuNulo(p.fornecedorId),
+    codigo_barras: vazioParaNulo(p.codigoBarras), sku: vazioParaNulo(p.sku), fornecedor_id: numeroOuNulo(p.fornecedorId),
     custo: numeroOuNulo(p.custo),
   }),
 };

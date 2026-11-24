@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Barcode } from "lucide-react";
+import { Barcode, Camera, Tag } from "lucide-react";
 import { cn } from "../../utils/format";
 import { CATEGORIAS } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
@@ -7,21 +7,29 @@ import { Painel } from "../../components/ui/Painel";
 import { RodapePainel } from "../../components/ui/RodapePainel";
 import { inputClasses } from "../../components/ui/inputClasses";
 import { BuscaFornecedor } from "../../components/BuscaFornecedor";
+import { LeitorCodigo } from "../../components/LeitorCodigo";
 
 export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
   const [form, setForm] = useState(
-    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoqueMin: "", codigoBarras: "", fornecedorId: "", custo: "" }
+    inicial || { nome: "", categoria: CATEGORIAS[0].id, unidade: "un", preco: "", estoqueMin: "", codigoBarras: "", sku: "", fornecedorId: "", custo: "" }
   );
   const [erro, setErro] = useState("");
+  const [camera, setCamera] = useState(null); // "codigoBarras" | "sku" | null
 
   function salvar() {
     if (!form.nome.trim() || form.preco === "") {
       setErro("Preencha nome e preço.");
       return;
     }
+    if (!String(form.codigoBarras || "").trim() && !String(form.sku || "").trim()) {
+      setErro("Informe o código de barras ou o SKU (pode ser os dois) para localizar o produto na Venda.");
+      return;
+    }
     const { estoque: _saldo, ...dados } = form; // o saldo não é editado aqui
     onSalvar({
       ...dados,
+      codigoBarras: String(form.codigoBarras || "").trim(),
+      sku: String(form.sku || "").trim(),
       preco: parseFloat(form.preco) || 0,
       estoqueMin: parseFloat(form.estoqueMin) || 0,
       custo: form.custo === "" || form.custo === null || form.custo === undefined ? null : parseFloat(form.custo),
@@ -30,6 +38,7 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
   }
 
   return (
+    <>
     <Painel titulo={inicial ? "Editar produto" : "Novo produto"} onFechar={onCancelar}>
       <div className="space-y-5">
         <Campo label="Nome do produto">
@@ -41,18 +50,53 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
           />
         </Campo>
 
-        <Campo label="Código de barras (opcional)">
-          <div style={{ position: "relative" }}>
-            <Barcode size={14} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
-            <input
-              value={form.codigoBarras}
-              onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })}
-              className={cn(inputClasses, "pl-8")}
-              placeholder="Bipe ou digite o código"
-            />
-          </div>
-          <p className="text-xs text-stone-400 mt-1.5">Usado para localizar o produto rapidamente na Venda (PDV).</p>
-        </Campo>
+        <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-3.5 space-y-4">
+          <p className="text-xs text-stone-500">
+            Informe <strong className="font-semibold text-stone-700">pelo menos um</strong>: código de barras ou SKU. Os dois servem para achar o produto na Venda (PDV).
+          </p>
+          <Campo label="Código de barras">
+            <div className="flex gap-2">
+              <div style={{ position: "relative" }} className="flex-1 min-w-0">
+                <Barcode size={14} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
+                <input
+                  value={form.codigoBarras}
+                  onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })}
+                  className={cn(inputClasses, "pl-8")}
+                  placeholder="Bipe ou digite o código"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setCamera("codigoBarras")}
+                className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-600 hover:bg-stone-50"
+                aria-label="Ler código de barras com a câmera"
+              >
+                <Camera size={15} /> <span className="hidden sm:inline">Câmera</span>
+              </button>
+            </div>
+          </Campo>
+          <Campo label="SKU (código interno)">
+            <div className="flex gap-2">
+              <div style={{ position: "relative" }} className="flex-1 min-w-0">
+                <Tag size={14} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
+                <input
+                  value={form.sku}
+                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                  className={cn(inputClasses, "pl-8")}
+                  placeholder="Ex: CIM-CP2-50"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setCamera("sku")}
+                className="shrink-0 flex items-center gap-1.5 px-3 rounded-lg border border-stone-300 bg-white text-sm text-stone-600 hover:bg-stone-50"
+                aria-label="Ler SKU com a câmera"
+              >
+                <Camera size={15} /> <span className="hidden sm:inline">Câmera</span>
+              </button>
+            </div>
+          </Campo>
+        </div>
 
         <Campo label="Categoria">
           <select
@@ -128,5 +172,13 @@ export function ProdutoForm({ inicial, fornecedores, onSalvar, onCancelar }) {
         <RodapePainel onSalvar={salvar} onCancelar={onCancelar} />
       </div>
     </Painel>
+    {camera && (
+      <LeitorCodigo
+        titulo={camera === "sku" ? "Ler SKU" : "Ler código de barras"}
+        onFechar={() => setCamera(null)}
+        onLer={(codigo) => setForm((f) => ({ ...f, [camera]: codigo }))}
+      />
+    )}
+    </>
   );
 }

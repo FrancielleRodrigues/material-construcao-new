@@ -1,17 +1,22 @@
 import { spawn } from "node:child_process";
 import { chromium } from "playwright-core";
 
-export async function iniciar({ porta = 5199 } = {}) {
+// `camera`: arquivo .mjpeg que a câmera falsa do Chromium vai "filmar" (para testar a leitura de códigos).
+export async function iniciar({ porta = 5199, camera = null } = {}) {
   const servidor = spawn("npx", ["vite", "--config", "e2e/vite.config.js", "--port", String(porta), "--strictPort"], { stdio: "ignore", detached: true });
   const url = `http://localhost:${porta}`;
   for (let i = 0; i < 60; i++) {
     try { if ((await fetch(url)).ok) break; } catch { /* aguardando */ }
     await new Promise((r) => setTimeout(r, 500));
   }
-  const navegador = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium" });
+  const argsCamera = camera
+    ? ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-video-capture=${camera}`]
+    : [];
+  const navegador = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium", args: argsCamera });
   const erros = [];
   async function novaPagina(largura = 1280) {
-    const pagina = await navegador.newPage({ viewport: { width: largura, height: 900 } });
+    const contexto = await navegador.newContext({ viewport: { width: largura, height: 900 }, permissions: camera ? ["camera"] : [] });
+    const pagina = await contexto.newPage();
     pagina.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
     pagina.on("console", (m) => m.type() === "error" && !/404|favicon|Falha ao consultar o CEP|Failed to load resource/.test(m.text()) && erros.push(`console: ${m.text()}`));
     await pagina.goto(url);

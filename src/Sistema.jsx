@@ -362,35 +362,39 @@ export default function Sistema({ userId, email, onSair }) {
     if (ok || !alvo) setConfirmacao(null);
   }
 
-  function adicionarAoCarrinho() {
-    const codigo = bipCodigo.trim();
+  // Localiza o produto pelo código de barras OU pelo SKU (sem diferenciar maiúsculas).
+  // `codigoLido` vem da câmera; sem ele usa o que está digitado. Devolve o resultado para a câmera mostrar.
+  function adicionarAoCarrinho(codigoLido) {
+    const informado = typeof codigoLido === "string" ? codigoLido : bipCodigo;
+    const codigo = informado.trim().toUpperCase();
     const qtd = parseInt(bipQuantidade) || 1;
-    if (!codigo) {
-      setErroBip("Informe ou bipe o código de barras do produto.");
-      return;
-    }
+    const falha = (mensagem) => {
+      setErroBip(mensagem);
+      return { ok: false, mensagem };
+    };
+    if (!codigo) return falha("Informe, bipe ou leia o código de barras ou o SKU do produto.");
 
-    const produto = produtos.find((p) => p.codigoBarras === codigo);
-    if (!produto) {
-      setErroBip("Produto não encontrado para esse código.");
-      return;
-    }
+    const produto =
+      produtos.find((p) => p.codigoBarras && p.codigoBarras.toUpperCase() === codigo) ||
+      produtos.find((p) => p.sku && p.sku.toUpperCase() === codigo);
+    if (!produto) return falha(`Produto não encontrado para "${informado.trim()}".`);
 
     const jaNoCarrinho = carrinho.find((i) => i.produtoId === produto.id);
     const qtdAtual = jaNoCarrinho ? jaNoCarrinho.quantidade : 0;
     if (qtdAtual + qtd > produto.estoque) {
-      setErroBip(`Estoque insuficiente. Disponível: ${produto.estoque} ${produto.unidade}.`);
-      return;
+      return falha(`Estoque insuficiente de "${produto.nome}". Disponível: ${produto.estoque} ${produto.unidade}.`);
     }
 
-    setCarrinho(
-      jaNoCarrinho
-        ? carrinho.map((i) => (i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + qtd } : i))
-        : [...carrinho, { produtoId: produto.id, quantidade: qtd }]
-    );
+    setCarrinho((atual) => {
+      const existente = atual.find((i) => i.produtoId === produto.id);
+      return existente
+        ? atual.map((i) => (i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + qtd } : i))
+        : [...atual, { produtoId: produto.id, quantidade: qtd }];
+    });
     setBipCodigo("");
     setBipQuantidade("1");
     setErroBip("");
+    return { ok: true, mensagem: `${qtd}x ${produto.nome} adicionado` };
   }
 
   function alterarQtdCarrinho(produtoId, novaQtd) {

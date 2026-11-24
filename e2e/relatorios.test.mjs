@@ -255,6 +255,7 @@ test("Produto: preço de custo opcional, gravado e mostrado ao editar", async ()
   await p.getByRole("button", { name: /Novo|Nova/ }).first().click();
   await p.getByPlaceholder("Ex: Cimento CP-II 50kg").fill("Areia lavada");
   await p.getByPlaceholder("0,00").first().fill("100");
+  await p.getByPlaceholder("Ex: CIM-CP2-50").fill("ARE-LAV");
   await p.getByRole("button", { name: "Salvar" }).click();
   await p.locator("main").getByText("Areia lavada").first().waitFor({ timeout: 15000 });
   assert.equal((await sql(p, "select custo from produtos where nome = 'Areia lavada'"))[0].custo, null, "custo é opcional");

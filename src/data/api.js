@@ -15,6 +15,8 @@ function traduzir(error) {
     if (msg.includes("clientes_documento_uniq")) return "Já existe um cliente com este CPF/CNPJ.";
     if (msg.includes("fornecedores_documento_uniq")) return "Já existe um fornecedor com este CPF/CNPJ.";
     if (msg.includes("produtos_codigo_barras_uniq")) return "Já existe um produto com este código de barras.";
+    if (msg.includes("produtos_sku_uniq")) return "Já existe um produto com este SKU.";
+    if (msg.includes("já é o código de barras") || msg.includes("já é o SKU")) return error.message;
     if (msg.includes("usuarios_email_uniq")) return "Já existe um usuário com este e-mail.";
     return "Já existe um registro com estes dados.";
   }

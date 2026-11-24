@@ -406,3 +406,20 @@ test("auditoria: registra quem mudou o quê (só colunas alteradas), ignora esto
   await erro(como("admin@x.com", () => q("update auditoria set quem = 'apagado'")), "permission denied");
   await erro(como("admin@x.com", () => q("delete from auditoria")), "permission denied");
 });
+
+test("SKU: único sem diferenciar maiúsculas e não pode repetir o código de barras de outro produto", async () => {
+  await como("admin@x.com", async () => {
+    await q(`insert into produtos (nome, preco, sku) values ('Areia', 10, 'ARE-01')`);
+    await erro(q(`insert into produtos (nome, preco, sku) values ('Areia 2', 10, ' are-01 ')`), "produtos_sku_uniq");
+    await erro(q(`insert into produtos (nome, preco, sku) values ('Outro', 10, '789001')`), "já é o código de barras");
+    await erro(q(`insert into produtos (nome, preco, codigo_barras) values ('Outro', 10, 'are-01')`), "já é o SKU");
+    // vazio não conta como duplicado
+    await q(`insert into produtos (nome, preco, sku) values ('Sem sku 1', 10, ''), ('Sem sku 2', 10, null)`);
+    // o próprio produto pode ser salvo de novo com o mesmo SKU
+    await q(`update produtos set preco = 11 where sku = 'ARE-01'`);
+  });
+  await como("vend@x.com", async () => {
+    await erro(q(`insert into produtos (nome, preco, sku) values ('X', 1, 'Z')`), "permission denied|row-level security");
+  });
+  await q(`delete from produtos where nome in ('Areia', 'Sem sku 1', 'Sem sku 2')`);
+});
