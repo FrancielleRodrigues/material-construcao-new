@@ -95,7 +95,7 @@ export function EmpresaView({ empresa, podeEditar, onSalvar, ocupado }) {
       <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-5">
         <Secao titulo="Identificação">
           <Campo label="Razão social">
-            <input value={form.razaoSocial} onChange={(e) => set("razaoSocial", e.target.value)} className={entrada} disabled={trava} maxLength={120} placeholder="Ex: Construgestão Materiais Ltda" />
+            <input value={form.razaoSocial} onChange={(e) => set("razaoSocial", e.target.value)} className={entrada} disabled={trava} maxLength={120} placeholder="Ex: Minha Empresa Ltda" />
           </Campo>
           <div className={grade("grid-cols-2")}>
             <Campo label="Nome fantasia">

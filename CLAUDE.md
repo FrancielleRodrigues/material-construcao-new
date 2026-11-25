@@ -1,4 +1,4 @@
-# ConstruGestão — contexto do projeto
+# Cedro — contexto do projeto (antes chamado ConstruGestão)
 
 Sistema de gestão (mini ERP) para loja de material de construção, usado no computador e no celular. Idioma da interface e dos dados: português (Brasil).
 

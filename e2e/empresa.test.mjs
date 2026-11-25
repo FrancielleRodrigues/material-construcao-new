@@ -27,7 +27,7 @@ test("Empresa: preencher, validar, salvar e ver a pendência sumir; Fiscal mostr
   // validações
   await p.getByRole("button", { name: "Salvar dados da empresa" }).click();
   await p.getByRole("alert").getByText("Preencha a razão social.").waitFor();
-  await p.getByPlaceholder("Ex: Construgestão Materiais Ltda").fill("Construgestão Materiais Ltda");
+  await p.getByPlaceholder("Ex: Minha Empresa Ltda").fill("Construgestão Materiais Ltda");
   const cnpj = p.getByPlaceholder("00.000.000/0000-00");
   await cnpj.pressSequentially("1122233300018199999");
   assert.equal(await cnpj.inputValue(), "11.222.333/0001-81", "máscara e limite de 14 números");
@@ -99,8 +99,8 @@ test("Empresa: quem só visualiza vê os dados travados, sem botão de salvar", 
   await entrar(p, "caixa@teste.com");
   await p.getByRole("button", { name: "Empresa", exact: true }).first().waitFor({ timeout: 40000 });
   await aba(p, "Empresa");
-  assert.equal(await p.getByPlaceholder("Ex: Construgestão Materiais Ltda").inputValue(), "Somente Leitura Ltda");
-  assert.equal(await p.getByPlaceholder("Ex: Construgestão Materiais Ltda").isDisabled(), true);
+  assert.equal(await p.getByPlaceholder("Ex: Minha Empresa Ltda").inputValue(), "Somente Leitura Ltda");
+  assert.equal(await p.getByPlaceholder("Ex: Minha Empresa Ltda").isDisabled(), true);
   assert.equal(await p.getByRole("button", { name: "Salvar dados da empresa" }).count(), 0);
   await p.getByText(/só quem tem permissão de editar o módulo Empresa/).waitFor();
   await p.close();

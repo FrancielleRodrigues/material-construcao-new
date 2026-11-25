@@ -9,7 +9,7 @@ export function TelaAviso({ titulo, subtitulo, children }) {
           <div className="w-9 h-9 rounded-lg bg-teal-700 text-white flex items-center justify-center">
             <Boxes size={18} />
           </div>
-          <span className="font-semibold text-stone-800 text-lg">ConstruGestão</span>
+          <span className="font-semibold text-stone-800 text-lg">Cedro</span>
         </div>
         <div className="bg-white rounded-xl border border-stone-200 p-6 shadow-sm">
           <h1 className="text-base font-semibold text-stone-800">{titulo}</h1>

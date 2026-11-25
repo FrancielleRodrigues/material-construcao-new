@@ -626,7 +626,7 @@ export default function Sistema({ userId, email, onSair }) {
             <div className="w-8 h-8 rounded-lg bg-teal-800 flex items-center justify-center">
               <Boxes size={17} className="text-teal-200" />
             </div>
-            <span className="text-white font-semibold text-sm tracking-tight">ConstruGestão</span>
+            <span className="text-white font-semibold text-sm tracking-tight">Cedro</span>
           </div>
           {!isDesktop && (
             <button

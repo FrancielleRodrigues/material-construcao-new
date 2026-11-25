@@ -1,4 +1,4 @@
-# ConstruGestão
+# Cedro
 
 Sistema de gestão (mini ERP) para loja de material de construção: clientes, fornecedores, compras, produtos, venda (PDV), estoque, financeiro, fiscal (rascunhos), entregas e usuários. React + Vite + Tailwind, dados no Supabase (Postgres).
 
@@ -37,11 +37,11 @@ A tela de login tem "Esqueci minha senha": a pessoa informa o e-mail, recebe um 
 1. **URL Configuration**: *Site URL* = o endereço do site publicado e, em *Redirect URLs*, o mesmo endereço. Sem isso o link do e-mail leva para o lugar errado.
 2. **Sign In / Providers → Email → Minimum password length** = 12 (o site também exige).
 3. **E-mail**: o envio padrão do Supabase só entrega para e-mails da própria equipe do projeto e tem limite baixo (poucos e-mails por hora). Para os funcionários receberem, configure um SMTP próprio em *Authentication → SMTP Settings* (Resend, Brevo, Amazon SES etc.; todos têm plano gratuito) e confirme o domínio de envio.
-4. **Email Templates → Reset Password** (opcional, em português). Assunto: `Redefinir sua senha - ConstruGestão`. Corpo (HTML):
+4. **Email Templates → Reset Password** (opcional, em português). Assunto: `Redefinir sua senha - Cedro`. Corpo (HTML):
 
 ```html
 <h2>Redefinir sua senha</h2>
-<p>Recebemos um pedido para criar uma nova senha no ConstruGestão. Clique no link abaixo para escolher uma.</p>
+<p>Recebemos um pedido para criar uma nova senha no Cedro. Clique no link abaixo para escolher uma.</p>
 <p><a href="{{ .ConfirmationURL }}">Criar nova senha</a></p>
 <p>Se você não pediu, ignore este e-mail: sua senha continua a mesma.</p>
 ```
