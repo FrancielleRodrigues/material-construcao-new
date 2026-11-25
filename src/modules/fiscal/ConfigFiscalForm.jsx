@@ -6,7 +6,7 @@ import { PROVEDORES_NFE } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
 import { inputClasses } from "../../components/ui/inputClasses";
 
-export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar }) {
+export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar, somenteLeitura = false }) {
   const [form, setForm] = useState(inicial);
   const [salvo, setSalvo] = useState(false);
   const isSm = useMediaQuery("(min-width: 640px)");
@@ -18,7 +18,8 @@ export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar })
   }
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-6">
+    // fieldset desabilitado trava todos os campos e botões de dentro de uma vez
+    <fieldset disabled={somenteLeitura} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-6 min-w-0">
       <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3.5">
         <Building2 size={16} className="text-stone-400 shrink-0 mt-0.5" />
         <div className="text-sm text-stone-600 min-w-0">
@@ -116,6 +117,9 @@ export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar })
         </div>
       </div>
 
+      {somenteLeitura ? (
+        <p className="text-sm text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">Você só pode visualizar estas configurações.</p>
+      ) : (
       <div className="flex items-center gap-3 pt-2">
         <button
           onClick={salvar}
@@ -129,6 +133,7 @@ export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar })
           </span>
         )}
       </div>
-    </div>
+      )}
+    </fieldset>
   );
 }

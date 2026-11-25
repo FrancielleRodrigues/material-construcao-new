@@ -10,6 +10,7 @@ import { MOTIVOS_ENTRADA, MOTIVOS_SAIDA } from "../../data/constantes";
 
 export function EstoqueView({
   barraBusca,
+  podeEditar,
   movimentacoesFiltradas,
   chavePaginacao,
   movimentacoesHoje,
@@ -85,6 +86,7 @@ export function EstoqueView({
                       <td className="px-5 py-3.5"><BarraEstoque produto={p} /></td>
                       <td className="px-5 py-3.5 text-stone-500 tabular-nums">{p.estoqueMin} {p.unidade}</td>
                       <td className="px-5 py-3.5">
+                        {podeEditar && (
                         <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setFormMovimentacao({ produtoId: p.id })}
@@ -94,6 +96,7 @@ export function EstoqueView({
                             <ArrowRightLeft size={14} />
                           </button>
                         </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -105,6 +108,7 @@ export function EstoqueView({
                   <div key={p.id} className="p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
+                      {podeEditar && (
                       <button
                         onClick={() => setFormMovimentacao({ produtoId: p.id })}
                         className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 shrink-0"
@@ -112,6 +116,7 @@ export function EstoqueView({
                       >
                         <ArrowRightLeft size={14} />
                       </button>
+                      )}
                     </div>
                     <div className="mb-2"><CategoriaBadge categoriaId={p.categoria} /></div>
                     <div className="flex items-center justify-between text-xs text-stone-600 mb-2">
@@ -141,7 +146,7 @@ export function EstoqueView({
               icon={History}
               title="Nenhuma movimentação encontrada"
               subtitle="Registre entradas e saídas para acompanhar o histórico do estoque."
-              acao="Nova"
+              acao={podeEditar ? "Nova" : undefined}
               onAcao={() => setFormMovimentacao({})}
             />
           ) : (

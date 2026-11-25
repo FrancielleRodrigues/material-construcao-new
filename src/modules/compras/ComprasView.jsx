@@ -7,6 +7,7 @@ import { Paginacao } from "../../components/Paginacao";
 
 export function ComprasView({
   barraBusca,
+  podeEditar,
   filtroPedido,
   fornecedoresPorId,
   pedidosAtrasados,
@@ -65,7 +66,7 @@ export function ComprasView({
             icon={PackageOpen}
             title="Nenhum pedido de compra encontrado"
             subtitle="Registre um pedido ao fornecedor; quando a mercadoria chegar, transforme em compra num clique."
-            acao="Novo"
+            acao={podeEditar ? "Novo" : undefined}
             onAcao={() => setFormPedido({})}
           />
         ) : (
@@ -106,7 +107,7 @@ export function ComprasView({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="font-medium text-stone-700 tabular-nums">{moeda(totalPedido(p))}</span>
-                    {p.status === "pendente" && (
+                    {podeEditar && p.status === "pendente" && (
                       <button
                         onClick={() => registrarRecebimento(p)}
                         className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
@@ -114,12 +115,12 @@ export function ComprasView({
                         <PackageCheck size={13} /> Registrar recebimento
                       </button>
                     )}
-                    {p.status === "pendente" && (
+                    {podeEditar && p.status === "pendente" && (
                       <button onClick={() => setFormPedido(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
                         <Pencil size={14} />
                       </button>
                     )}
-                    {p.status === "pendente" && (
+                    {podeEditar && p.status === "pendente" && (
                       <button onClick={() => setConfirmacao({ tipo: "pedido", id: p.id, nome: `Pedido nº ${p.numero}` })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>

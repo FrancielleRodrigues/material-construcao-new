@@ -8,6 +8,7 @@ import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 
 export function FornecedoresView({
   barraBusca,
+  podeEditar,
   fornecedores,
   fornecedoresFiltrados,
   chavePaginacao,
@@ -29,7 +30,7 @@ export function FornecedoresView({
             icon={Factory}
             title="Nenhum fornecedor encontrado"
             subtitle="Cadastre o primeiro fornecedor para começar a usar o sistema."
-            acao="Novo"
+            acao={podeEditar ? "Novo" : undefined}
             onAcao={() => setFormFornecedor({})}
           />
         ) : (
@@ -66,6 +67,7 @@ export function FornecedoresView({
                     </td>
                     <td className="px-5 py-3.5 text-stone-500">{f.condicaoPagamento || "—"}</td>
                     <td className="px-5 py-3.5">
+                      {podeEditar && (
                       <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => setFormFornecedor(f)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
                           <Pencil size={14} />
@@ -74,6 +76,7 @@ export function FornecedoresView({
                           <Trash2 size={14} />
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -98,6 +101,7 @@ export function FornecedoresView({
                         <p className="text-xs text-stone-400">Pagamento: {f.condicaoPagamento}</p>
                       )}
                     </div>
+                    {podeEditar && (
                     <div className="flex flex-col gap-1 shrink-0">
                       <button onClick={() => setFormFornecedor(f)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
                         <Pencil size={14} />
@@ -106,6 +110,7 @@ export function FornecedoresView({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    )}
                   </div>
                 </div>
               ))}

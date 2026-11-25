@@ -5,6 +5,7 @@ import { statusLancamento, StatusChip } from "../financeiro/financeiroUi";
 import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 
 export function InicioView({
+  podeEditar,
   aPagar,
   aReceber,
   clientes,
@@ -23,6 +24,7 @@ export function InicioView({
   valorEmEstoque,
   vencidos,
 }) {
+  const algumAtalho = ["venda", "clientes", "fornecedores", "compras", "produtos", "estoque", "financeiro"].some(podeEditar);
   return (
     <>
       <div className="space-y-6">
@@ -42,18 +44,19 @@ export function InicioView({
           <KpiCard label="Lançamentos vencidos" valor={vencidos} icon={AlertTriangle} tom="bg-red-50 text-red-600" />
         </div>
 
+        {algumAtalho && (
         <div>
           <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Ações rápidas</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.75rem" }}>
             {[
-              { label: "Nova venda", icon: ScanLine, onClick: () => setAba("venda") },
-              { label: "Novo cliente", icon: Users, onClick: () => { setAba("clientes"); setFormCliente({}); } },
-              { label: "Novo fornecedor", icon: Factory, onClick: () => { setAba("fornecedores"); setFormFornecedor({}); } },
-              { label: "Novo pedido", icon: PackageOpen, onClick: () => { setAba("compras"); setFormPedido({}); } },
-              { label: "Novo produto", icon: Package, onClick: () => { setAba("produtos"); setFormProduto({}); } },
-              { label: "Movimentar estoque", icon: ArrowRightLeft, onClick: () => { setAba("estoque"); setFormMovimentacao({}); } },
-              { label: "Novo lançamento", icon: Wallet, onClick: () => { setAba("financeiro"); setFormLancamento({}); } },
-            ].map((a) => (
+              { modulo: "venda", label: "Nova venda", icon: ScanLine, onClick: () => setAba("venda") },
+              { modulo: "clientes", label: "Novo cliente", icon: Users, onClick: () => { setAba("clientes"); setFormCliente({}); } },
+              { modulo: "fornecedores", label: "Novo fornecedor", icon: Factory, onClick: () => { setAba("fornecedores"); setFormFornecedor({}); } },
+              { modulo: "compras", label: "Novo pedido", icon: PackageOpen, onClick: () => { setAba("compras"); setFormPedido({}); } },
+              { modulo: "produtos", label: "Novo produto", icon: Package, onClick: () => { setAba("produtos"); setFormProduto({}); } },
+              { modulo: "estoque", label: "Movimentar estoque", icon: ArrowRightLeft, onClick: () => { setAba("estoque"); setFormMovimentacao({}); } },
+              { modulo: "financeiro", label: "Novo lançamento", icon: Wallet, onClick: () => { setAba("financeiro"); setFormLancamento({}); } },
+            ].filter((a) => podeEditar(a.modulo)).map((a) => (
               <button
                 key={a.label}
                 onClick={a.onClick}
@@ -67,6 +70,7 @@ export function InicioView({
             ))}
           </div>
         </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">

@@ -7,6 +7,7 @@ import { iniciais, formatarEndereco } from "../../utils/format";
 
 export function ClientesView({
   barraBusca,
+  podeEditar,
   clientes,
   clientesFiltrados,
   chavePaginacao,
@@ -28,7 +29,7 @@ export function ClientesView({
             icon={Users}
             title="Nenhum cliente encontrado"
             subtitle="Cadastre o primeiro cliente para começar a usar o sistema."
-            acao="Novo"
+            acao={podeEditar ? "Novo" : undefined}
             onAcao={() => setFormCliente({})}
           />
         ) : (
@@ -65,6 +66,7 @@ export function ClientesView({
                       <span className="inline-flex items-center gap-1.5"><MapPin size={13} className="text-stone-400 shrink-0" />{formatarEndereco(c.endereco)}</span>
                     </td>
                     <td className="px-5 py-3.5">
+                      {podeEditar && (
                       <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => setFormCliente(c)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
                           <Pencil size={14} />
@@ -73,6 +75,7 @@ export function ClientesView({
                           <Trash2 size={14} />
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -96,6 +99,7 @@ export function ClientesView({
                         <MapPin size={12} className="text-stone-400 shrink-0 mt-0.5" />{formatarEndereco(c.endereco)}
                       </p>
                     </div>
+                    {podeEditar && (
                     <div className="flex flex-col gap-1 shrink-0">
                       <button onClick={() => setFormCliente(c)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
                         <Pencil size={14} />
@@ -104,6 +108,7 @@ export function ClientesView({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    )}
                   </div>
                 </div>
               ))}

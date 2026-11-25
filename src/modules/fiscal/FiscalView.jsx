@@ -9,6 +9,7 @@ import { Paginacao } from "../../components/Paginacao";
 export function FiscalView({
   clientesPorId,
   empresaFiscal,
+  podeEditar,
   emitente,
   irParaEmpresa,
   gerarRascunhoNota,
@@ -80,12 +81,14 @@ export function FiscalView({
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="font-medium text-stone-700 tabular-nums">{moeda(v.total ?? totalVenda(v))}</span>
+                        {podeEditar && (
                         <button
                           onClick={() => gerarRascunhoNota(v)}
                           className="flex items-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
                         >
                           <FileCheck2 size={14} /> Gerar rascunho
                         </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -127,7 +130,7 @@ export function FiscalView({
         )}
 
         {subFiscal === "config" && (
-          <ConfigFiscalForm inicial={empresaFiscal} emitente={emitente} irParaEmpresa={irParaEmpresa} onSalvar={salvarConfigFiscal} />
+          <ConfigFiscalForm somenteLeitura={!podeEditar} inicial={empresaFiscal} emitente={emitente} irParaEmpresa={irParaEmpresa} onSalvar={salvarConfigFiscal} />
         )}
       </div>
     </>

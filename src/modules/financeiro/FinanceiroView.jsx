@@ -8,6 +8,7 @@ import { statusLancamento, TipoLancamentoChip, StatusChip } from "./financeiroUi
 
 export function FinanceiroView({
   barraBusca,
+  podeEditar,
   aPagar,
   aReceber,
   alternarPago,
@@ -60,7 +61,7 @@ export function FinanceiroView({
             icon={Wallet}
             title="Nenhum lançamento encontrado"
             subtitle="Registre contas a receber e a pagar para acompanhar o financeiro."
-            acao="Novo"
+            acao={podeEditar ? "Novo" : undefined}
             onAcao={() => setFormLancamento({})}
           />
         ) : (
@@ -94,6 +95,7 @@ export function FinanceiroView({
                       </td>
                       <td className="px-5 py-3.5"><StatusChip status={status} /></td>
                       <td className="px-5 py-3.5">
+                        {podeEditar && (
                         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => alternarPago(l)}
@@ -113,6 +115,7 @@ export function FinanceiroView({
                             <Trash2 size={14} />
                           </button>
                         </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -140,6 +143,7 @@ export function FinanceiroView({
                       <span>{contraparte}</span>
                       <span className="inline-flex items-center gap-1"><CalendarClock size={12} />{formatarData(l.vencimento)}</span>
                     </div>
+                    {podeEditar && (
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => alternarPago(l)}
@@ -157,6 +161,7 @@ export function FinanceiroView({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    )}
                   </div>
                 );
               })}

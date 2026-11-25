@@ -39,6 +39,9 @@ import { RelatoriosView } from "./modules/relatorios/RelatoriosView";
 import { EmpresaView } from "./modules/empresa/EmpresaView";
 import { EntregaForm } from "./modules/entregas/EntregaForm";
 
+// abas em que não existe ação de alterar (só consulta) ou que já avisam por conta própria
+const SEM_EDICAO_DE_ABA = ["inicio", "relatorios", "empresa"];
+
 export default function Sistema({ userId, email, onSair }) {
   const [aba, setAba] = useState("inicio");
   const [clientes, setClientes] = useState([]);
@@ -741,9 +744,20 @@ export default function Sistema({ userId, email, onSair }) {
                     <span className="text-stone-600 font-medium">{TITULOS_ABA[aba]}</span>
                   </div>
                 )}
-                <h1 className="text-lg sm:text-xl font-semibold text-stone-900 truncate">
-                  {TITULOS_ABA[aba]}
-                </h1>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <h1 className="text-lg sm:text-xl font-semibold text-stone-900 truncate">
+                    {TITULOS_ABA[aba]}
+                  </h1>
+                  {SEM_EDICAO_DE_ABA.includes(aba) ? null : podeVer(aba) && !podeEditar(aba) && (
+                    <span
+                      data-testid="selo-somente-leitura"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200 px-2 py-0.5 rounded-full"
+                      title="Seu perfil só pode consultar esta área"
+                    >
+                      <Eye size={12} /> Somente visualização
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -809,6 +823,7 @@ export default function Sistema({ userId, email, onSair }) {
         <main className="px-4 sm:px-8 py-5 sm:py-6 max-w-6xl">
           {aba === "inicio" && (
             <InicioView
+              podeEditar={podeEditar}
               aPagar={aPagar}
               aReceber={aReceber}
               clientes={clientes}
@@ -830,6 +845,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "produtos" && (
             <ProdutosView
+              podeEditar={podeEditar("produtos")}
               chavePaginacao={busca}
               barraBusca={barraBusca}
               fornecedoresPorId={fornecedoresPorId}
@@ -844,6 +860,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "clientes" && (
             <ClientesView
+              podeEditar={podeEditar("clientes")}
               chavePaginacao={busca}
               barraBusca={barraBusca}
               clientes={clientes}
@@ -855,6 +872,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "fornecedores" && (
             <FornecedoresView
+              podeEditar={podeEditar("fornecedores")}
               chavePaginacao={busca}
               barraBusca={barraBusca}
               fornecedores={fornecedores}
@@ -866,6 +884,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "estoque" && (
             <EstoqueView
+              podeEditar={podeEditar("estoque")}
               chavePaginacao={`${busca}|${subEstoque}`}
               barraBusca={barraBusca}
               movimentacoesFiltradas={movimentacoesFiltradas}
@@ -882,6 +901,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "financeiro" && (
             <FinanceiroView
+              podeEditar={podeEditar("financeiro")}
               chavePaginacao={`${busca}|${filtroFinanceiro}`}
               aPagar={aPagar}
               aReceber={aReceber}
@@ -900,6 +920,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "entregas" && (
             <EntregasView
+              podeEditar={podeEditar("entregas")}
               chavePaginacao={`${busca}|${filtroEntrega}`}
               avancarStatusEntrega={avancarStatusEntrega}
               barraBusca={barraBusca}
@@ -918,6 +939,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "compras" && (
             <ComprasView
+              podeEditar={podeEditar("compras")}
               chavePaginacao={`${busca}|${filtroPedido}`}
               barraBusca={barraBusca}
               filtroPedido={filtroPedido}
@@ -938,6 +960,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "venda" && (
             <VendaView
+              podeEditar={podeEditar("venda")}
               adicionarAoCarrinho={adicionarAoCarrinho}
               alterarQtdCarrinho={alterarQtdCarrinho}
               bipCodigo={bipCodigo}
@@ -985,6 +1008,7 @@ export default function Sistema({ userId, email, onSair }) {
           )}
           {aba === "fiscal" && (
             <FiscalView
+              podeEditar={podeEditar("fiscal")}
               chavePaginacao={subFiscal}
               clientesPorId={clientesPorId}
               empresaFiscal={empresaFiscal}
@@ -1005,6 +1029,7 @@ export default function Sistema({ userId, email, onSair }) {
           {aba === "empresa" && <EmpresaView empresa={empresa} podeEditar={podeEditar("empresa")} onSalvar={salvarEmpresa} ocupado={ocupado} />}
           {aba === "usuarios" && (
             <UsuariosView
+              podeEditar={podeEditar("usuarios")}
               chavePaginacao={subUsuarios}
               barraBusca={barraBusca}
               papeis={papeis}

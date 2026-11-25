@@ -10,6 +10,7 @@ import { LeitorCodigo } from "../../components/LeitorCodigo";
 
 export function VendaView({
   adicionarAoCarrinho,
+  podeEditar,
   alterarQtdCarrinho,
   bipCodigo,
   bipQuantidade,
@@ -63,12 +64,18 @@ export function VendaView({
           </div>
           <h2 className="text-lg font-semibold text-stone-900 mb-1.5">Nova venda</h2>
           <p className="text-sm text-stone-500 mb-6">Identifique o cliente para começar a venda.</p>
+          {podeEditar ? (
           <button
             onClick={() => setEtapaVenda("cliente")}
             className="w-full flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
           >
             <Plus size={16} /> Iniciar venda
           </button>
+          ) : (
+          <p className="text-sm text-stone-600 bg-stone-50 border border-stone-200 rounded-lg px-3 py-3">
+            Seu perfil só pode <strong>visualizar</strong> a Venda: não é possível iniciar vendas.
+          </p>
+          )}
         </div>
       )}
       {etapaVenda === "cliente" && (

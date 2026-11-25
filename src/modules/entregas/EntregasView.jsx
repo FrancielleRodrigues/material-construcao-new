@@ -9,6 +9,7 @@ import { StatusEntregaChip } from "./entregasUi";
 
 export function EntregasView({
   barraBusca,
+  podeEditar,
   avancarStatusEntrega,
   cancelarEntrega,
   clientesPorId,
@@ -53,7 +54,7 @@ export function EntregasView({
               icon={Truck}
               title="Nenhuma entrega encontrada"
               subtitle="Cadastre uma entrega vinculada a uma venda ou avulsa."
-              acao="Nova"
+              acao={podeEditar ? "Nova" : undefined}
               onAcao={() => setFormEntrega({})}
             />
           ) : (
@@ -83,6 +84,7 @@ export function EntregasView({
                         {e.veiculo && <span className="inline-flex items-center gap-1"><Truck size={11} /> {e.veiculo}</span>}
                       </p>
                     </div>
+                    {podeEditar && (
                     <div className="flex items-center gap-2 shrink-0">
                       {(e.status === "pendente" || e.status === "em_rota") && (
                         <button
@@ -101,6 +103,7 @@ export function EntregasView({
                         </button>
                       )}
                     </div>
+                    )}
                   </div>
                 );
               })}

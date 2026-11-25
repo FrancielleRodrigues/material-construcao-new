@@ -32,6 +32,7 @@ export function UsuariosView({
   barraBusca,
   auditoria,
   podeAuditar,
+  podeEditar,
   papeis,
   papeisPorId,
   setConfirmacao,
@@ -78,6 +79,7 @@ export function UsuariosView({
 
         {subUsuarios === "usuarios" && (
           <div ref={pgUsuarios.ref} style={{ scrollMarginTop: "4.5rem" }} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+            {podeEditar && (
             <div className="flex justify-end p-3 border-b border-stone-100">
               <button
                 onClick={() => setFormUsuario({})}
@@ -86,6 +88,7 @@ export function UsuariosView({
                 <Plus size={14} /> Novo usuário
               </button>
             </div>
+            )}
             <div className="divide-y divide-stone-100">
               {pgUsuarios.itens.map((u) => (
                 <div key={u.id} className="flex items-center justify-between gap-3 p-4">
@@ -107,7 +110,7 @@ export function UsuariosView({
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    {podeAuditar && (
+                    {podeEditar && (
                       <button
                         onClick={() => setSenhaUsuario(u)}
                         className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800"
@@ -117,10 +120,12 @@ export function UsuariosView({
                         <KeyRound size={14} />
                       </button>
                     )}
+                    {podeEditar && (
                     <button onClick={() => setFormUsuario(u)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
                       <Pencil size={14} />
                     </button>
-                    {u.id !== usuarioLogadoId && (
+                    )}
+                    {podeEditar && u.id !== usuarioLogadoId && (
                       <button onClick={() => setConfirmacao({ tipo: "usuario", id: u.id, nome: u.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
@@ -165,6 +170,7 @@ export function UsuariosView({
 
         {subUsuarios === "papeis" && (
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+            {podeEditar && (
             <div className="flex justify-end p-3 border-b border-stone-100">
               <button
                 onClick={() => setFormPapel({})}
@@ -173,6 +179,7 @@ export function UsuariosView({
                 <Plus size={14} /> Novo papel
               </button>
             </div>
+            )}
             <div className="divide-y divide-stone-100">
               {papeis.map((p) => {
                 const emUso = usuarios.some((u) => u.papelId === p.id);
@@ -190,12 +197,12 @@ export function UsuariosView({
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      {!p.fixo && (
+                      {podeEditar && !p.fixo && (
                         <button onClick={() => setFormPapel(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
                           <Pencil size={14} />
                         </button>
                       )}
-                      {!p.fixo && !emUso && (
+                      {podeEditar && !p.fixo && !emUso && (
                         <button onClick={() => setConfirmacao({ tipo: "papel", id: p.id, nome: p.nome })} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-red-600">
                           <Trash2 size={14} />
                         </button>

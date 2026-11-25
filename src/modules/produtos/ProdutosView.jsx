@@ -8,6 +8,7 @@ import { CategoriaBadge } from "../../components/ui/CategoriaBadge";
 
 export function ProdutosView({
   barraBusca,
+  podeEditar,
   fornecedoresPorId,
   produtos,
   produtosEstoqueBaixo,
@@ -32,7 +33,7 @@ export function ProdutosView({
             icon={Package}
             title="Nenhum produto encontrado"
             subtitle="Cadastre o primeiro produto para começar a controlar o estoque."
-            acao="Novo"
+            acao={podeEditar ? "Novo" : undefined}
             onAcao={() => setFormProduto({})}
           />
         ) : (
@@ -74,6 +75,7 @@ export function ProdutosView({
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
+                      {podeEditar && (
                       <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => setFormProduto(p)} className="w-7 h-7 rounded-md flex items-center justify-center text-stone-400 hover:bg-white hover:text-teal-800 hover:border hover:border-stone-200">
                           <Pencil size={14} />
@@ -82,6 +84,7 @@ export function ProdutosView({
                           <Trash2 size={14} />
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -93,6 +96,7 @@ export function ProdutosView({
                 <div key={p.id} className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <p className="font-medium text-stone-800 min-w-0">{p.nome}</p>
+                    {podeEditar && (
                     <div className="flex gap-1 shrink-0">
                       <button onClick={() => setFormProduto(p)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200">
                         <Pencil size={14} />
@@ -101,6 +105,7 @@ export function ProdutosView({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    )}
                   </div>
                   <div className="mb-2"><CategoriaBadge categoriaId={p.categoria} /></div>
                   {p.fornecedorId && fornecedoresPorId[p.fornecedorId] && (
