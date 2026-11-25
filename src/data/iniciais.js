@@ -134,6 +134,8 @@ export const VENDAS_INICIAIS = [
 
 export const EMPRESA_FISCAL_INICIAL = {
   razaoSocial: "", nomeFantasia: "", cnpj: "", ie: "",
+  telefone: "",
+  endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
   regimeTributario: "simples_nacional",
   ambiente: "homologacao",
   provedor: "",

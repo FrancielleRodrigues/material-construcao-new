@@ -1065,6 +1065,10 @@ export default function Sistema({ userId, email, onSair }) {
         <CupomModal
           venda={cupomAtual}
           cliente={cupomAtual.clienteId ? clientesPorId[cupomAtual.clienteId] : null}
+          empresa={empresaFiscal}
+          produtosPorId={produtosPorId}
+          operador={usuarioAtual?.nome}
+          nota={notasFiscais.find((n) => n.vendaId === cupomAtual.id) || null}
           onNovaVenda={() => setCupomAtual(null)}
           onFechar={() => setCupomAtual(null)}
         />

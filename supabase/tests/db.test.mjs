@@ -574,3 +574,20 @@ test("importar NF-e grava o vínculo código do fornecedor → produto; a nota s
     await erro(q("insert into produtos_codigo_fornecedor (fornecedor_id, codigo, produto_id) values (1, 'X', 1)"), "permission denied");
   });
 });
+
+test("cupom: endereço da empresa e hora da venda; quem vende (sem Fiscal) lê os dados da empresa", async () => {
+  await como("admin@x.com", async () => {
+    await q(`update empresa_fiscal set nome_fantasia = 'Loja X', telefone = '(27) 3333-4455', endereco = '{"logradouro":"Rua A","numero":"1"}'::jsonb`);
+  });
+  await como("vend@x.com", async () => {
+    const e = (await q("select nome_fantasia, telefone, endereco->>'logradouro' as rua from empresa_fiscal"))[0];
+    assert.deepEqual(e, { nome_fantasia: "Loja X", telefone: "(27) 3333-4455", rua: "Rua A" }, "vendedor precisa do cabeçalho do cupom");
+    await q("update empresa_fiscal set telefone = 'x'"); // RLS: não altera nenhuma linha
+    assert.equal((await q("select telefone from empresa_fiscal"))[0].telefone, "(27) 3333-4455", "vendedor não edita a empresa");
+  });
+  await como("admin@x.com", async () => {
+    const id = (await q("select public.finalizar_venda(null, 'pix', '[{\"produto_id\": 2, \"quantidade\": 1}]'::jsonb) as id"))[0].id;
+    const v = (await q("select criada_em is not null as tem_hora, abs(extract(epoch from (now() - criada_em))) < 60 as agora from vendas where id = $1", [id]))[0];
+    assert.deepEqual(v, { tem_hora: true, agora: true });
+  });
+});

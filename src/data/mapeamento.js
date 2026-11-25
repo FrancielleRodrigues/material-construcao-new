@@ -88,10 +88,12 @@ export const empresaFiscal = {
     razaoSocial: r.razao_social, nomeFantasia: r.nome_fantasia, cnpj: r.cnpj, ie: r.ie,
     regimeTributario: r.regime_tributario, ambiente: r.ambiente, provedor: r.provedor,
     certificadoInstalado: r.certificado_instalado, serieNFe: r.serie_nfe, proximoNumero: r.proximo_numero,
+    endereco: r.endereco || {}, telefone: r.telefone || "",
   }),
   para: (e) => ({
     razao_social: texto(e.razaoSocial), nome_fantasia: texto(e.nomeFantasia), cnpj: texto(e.cnpj), ie: texto(e.ie),
     regime_tributario: e.regimeTributario, ambiente: e.ambiente, provedor: texto(e.provedor),
+    endereco: e.endereco && typeof e.endereco === "object" ? e.endereco : {}, telefone: texto(e.telefone),
     certificado_instalado: Boolean(e.certificadoInstalado), serie_nfe: texto(e.serieNFe) || "1",
     proximo_numero: Math.max(1, parseInt(e.proximoNumero) || 1),
   }),
@@ -165,7 +167,7 @@ export function montarVendas(linhas, itens) {
     });
   }
   return linhas.map((r) => ({
-    id: r.id, numero: r.numero, data: r.data, clienteId: r.cliente_id, formaPagamento: r.forma_pagamento,
+    id: r.id, numero: r.numero, data: r.data, criadaEm: r.criada_em || null, clienteId: r.cliente_id, formaPagamento: r.forma_pagamento,
     itens: porVenda[r.id] || [], subtotal: Number(r.subtotal),
     desconto: { tipo: r.desconto_tipo, valor: Number(r.desconto_valor), valorCalculado: Number(r.desconto_calculado) },
     total: Number(r.total), tipoEntrega: r.tipo_entrega, enderecoEntrega: r.endereco_entrega, notaGerada: r.nota_gerada,

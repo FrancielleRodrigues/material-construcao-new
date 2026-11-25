@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+/* Cupom de venda: a cópia "so-impressao" fica escondida na tela; ao imprimir, o sistema (#root)
+   some e sobra só o cupom, em largura de bobina (80 mm). */
+.so-impressao { display: none; }
+@media print {
+  @page { size: 80mm auto; margin: 3mm; }
+  #root { display: none !important; }
+  .so-impressao { display: block !important; width: 74mm; margin: 0; }
+  body { background: #fff !important; }
+}

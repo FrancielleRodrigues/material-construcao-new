@@ -5,12 +5,28 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { REGIMES_TRIBUTARIOS, PROVEDORES_NFE } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
 import { inputClasses } from "../../components/ui/inputClasses";
-import { mascararCnpj } from "../../utils/mascaras";
+import { mascararCnpj, mascararTelefone, mascararCep } from "../../utils/mascaras";
+import { buscarCep } from "../../utils/cep";
 
 export function ConfigFiscalForm({ inicial, onSalvar }) {
-  const [form, setForm] = useState(inicial);
+  const [form, setForm] = useState(() => ({
+    ...inicial,
+    telefone: mascararTelefone(inicial.telefone),
+    endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", ...(inicial.endereco || {}) },
+  }));
   const [salvo, setSalvo] = useState(false);
   const isSm = useMediaQuery("(min-width: 640px)");
+
+  const setEndereco = (campo, valor) => setForm((f) => ({ ...f, endereco: { ...f.endereco, [campo]: valor } }));
+
+  async function aoMudarCep(valor) {
+    const cep = mascararCep(valor);
+    setEndereco("cep", cep);
+    if (cep.length === 9) {
+      const achado = await buscarCep(cep);
+      if (achado) setForm((f) => ({ ...f, endereco: { ...f.endereco, ...achado, cep } }));
+    }
+  }
 
   function salvar() {
     onSalvar(form);
@@ -70,6 +86,59 @@ export function ConfigFiscalForm({ inicial, onSalvar }) {
                   <option key={r.id} value={r.id}>{r.label}</option>
                 ))}
               </select>
+            </Campo>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-5 border-t border-stone-100">
+        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Endereço da empresa</p>
+        <p className="text-xs text-stone-400 mb-3">Aparece no cabeçalho do cupom de venda.</p>
+        <div className="space-y-4">
+          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
+            <Campo label="CEP">
+              <input
+                value={form.endereco.cep}
+                onChange={(e) => aoMudarCep(e.target.value)}
+                className={inputClasses}
+                inputMode="numeric"
+                maxLength={9}
+                placeholder="00000-000"
+              />
+            </Campo>
+            <Campo label="Telefone">
+              <input
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: mascararTelefone(e.target.value) })}
+                className={inputClasses}
+                inputMode="tel"
+                maxLength={15}
+                placeholder="(00) 00000-0000"
+              />
+            </Campo>
+          </div>
+          <Campo label="Logradouro">
+            <input
+              value={form.endereco.logradouro}
+              onChange={(e) => setEndereco("logradouro", e.target.value)}
+              className={inputClasses}
+              placeholder="Preenchido pelo CEP"
+            />
+          </Campo>
+          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
+            <Campo label="Número">
+              <input value={form.endereco.numero} onChange={(e) => setEndereco("numero", e.target.value)} className={inputClasses} placeholder="Ex: 1200" />
+            </Campo>
+            <Campo label="Bairro">
+              <input value={form.endereco.bairro} onChange={(e) => setEndereco("bairro", e.target.value)} className={inputClasses} />
+            </Campo>
+          </div>
+          <div className={cn("grid gap-4", isSm ? "grid-cols-[1fr_100px]" : "grid-cols-1")}>
+            <Campo label="Cidade">
+              <input value={form.endereco.cidade} onChange={(e) => setEndereco("cidade", e.target.value)} className={inputClasses} />
+            </Campo>
+            <Campo label="UF">
+              <input value={form.endereco.uf} onChange={(e) => setEndereco("uf", e.target.value.toUpperCase().slice(0, 2))} className={inputClasses} placeholder="ES" />
             </Campo>
           </div>
         </div>
