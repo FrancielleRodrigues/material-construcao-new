@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Plus, Search, X, Boxes, ChevronRight, Menu, ChevronDown, Eye, LogOut } from "lucide-react";
+import { Plus, Search, X, ChevronRight, Menu, ChevronDown, Eye, LogOut } from "lucide-react";
 import { cn, iniciais, hojeISO, formatarEndereco } from "./utils/format";
+import { ArvoreCedro } from "./components/ArvoreCedro";
 import { mascararCep } from "./utils/mascaras";
 import { buscarCep } from "./utils/cep";
 import { NAV_ITEMS, TITULOS_ABA } from "./data/constantes";
@@ -624,7 +625,7 @@ export default function Sistema({ userId, email, onSair }) {
         <div className="flex items-center justify-between gap-2 px-5 py-5 border-b border-stone-800">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-teal-800 flex items-center justify-center">
-              <Boxes size={17} className="text-teal-200" />
+              <ArvoreCedro size={20} className="text-teal-200" />
             </div>
             <span className="text-white font-semibold text-sm tracking-tight">Cedro</span>
           </div>

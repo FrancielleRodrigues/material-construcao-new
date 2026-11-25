@@ -1,4 +1,4 @@
-import { Boxes } from "lucide-react";
+import { ArvoreCedro } from "../../components/ArvoreCedro";
 
 // Tela cheia simples, usada para login, "sem acesso", erros de carga etc.
 export function TelaAviso({ titulo, subtitulo, children }) {
@@ -7,7 +7,7 @@ export function TelaAviso({ titulo, subtitulo, children }) {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-6 justify-center">
           <div className="w-9 h-9 rounded-lg bg-teal-700 text-white flex items-center justify-center">
-            <Boxes size={18} />
+            <ArvoreCedro size={22} />
           </div>
           <span className="font-semibold text-stone-800 text-lg">Cedro</span>
         </div>
