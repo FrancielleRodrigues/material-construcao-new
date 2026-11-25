@@ -24,13 +24,13 @@ export const FOLHAS = [
   { x: 50, y: 40, a: 32, c: 11.5 },
 ];
 
-// Frutinhas: ficam soltas no vão entre os galhos, cada uma com um pequeno espaço vazado em volta.
+// Frutinhas: ficam soltas no vão aberto entre os dois galhos, sem tocar em galho nem folha
+// (nada é cortado em volta delas).
 export const FRUTOS = [
-  { x: 32, y: 24.5, r: 3.2 },
-  { x: 24, y: 26, r: 2.3 },
-  { x: 40.5, y: 27, r: 2.8 },
+  { x: 32, y: 25.3, r: 2.9 },
+  { x: 27.4, y: 29.6, r: 2.1 },
+  { x: 36.6, y: 29.6, r: 2.1 },
 ];
-export const FOLGA_FRUTO = 1.3; // largura do espaço vazado ao redor da frutinha
 
 // Folha em coordenadas locais (aponta para +x): amêndoa fina com a ponta em (c, 0).
 // `cheia` engrossa a folha para os tamanhos pequenos, onde a fina some.
@@ -46,15 +46,12 @@ export function svgDaArvore({ cor = "#99f6e4", fundo = null, nervuras = true, ch
     ? FOLHAS.map((f) => `<g transform="translate(${f.x} ${f.y}) rotate(${f.a})"><path d="M${f.c * 0.14} 0 L${f.c * 0.86} 0" stroke="black" stroke-width="0.9" stroke-linecap="round"/></g>`).join("")
     : "";
   const frutos = FRUTOS.map((f) => `<circle cx="${f.x}" cy="${f.y}" r="${f.r}"/>`).join("");
-  const folgas = FRUTOS.map((f) => `<circle cx="${f.x}" cy="${f.y}" r="${f.r + FOLGA_FRUTO}"/>`).join("");
   const tronco = TRONCO.map((d) => `<path d="${d}"/>`).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   ${fundo ? `<rect width="64" height="64" rx="14" fill="${fundo}"/>` : ""}
   <defs><mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
     <rect width="64" height="64" fill="black"/>
-    <g fill="white">${tronco}${folhas}</g>
-    <g fill="black">${folgas}</g>
-    <g fill="white">${frutos}</g>
+    <g fill="white">${tronco}${folhas}${frutos}</g>
     <g fill="none">${veias}</g>
   </mask></defs>
   <rect width="64" height="64" fill="${cor}" mask="url(#m)"/>

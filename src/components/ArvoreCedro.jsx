@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { TRONCO, FOLHAS, FRUTOS, FOLGA_FRUTO, caminhoFolha } from "./arvoreCedroDados";
+import { TRONCO, FOLHAS, FRUTOS, caminhoFolha } from "./arvoreCedroDados";
 
 // A árvore da marca Cedro (mesmo desenho do favicon, em arvoreCedroDados.js): tronco que se abre em
 // galhos, folhas pontudas com nervura e frutinhas. Desenhada com máscara, então as nervuras são
@@ -18,12 +18,6 @@ export function ArvoreCedro({ size = 24, className = "" }) {
             {FOLHAS.map((f, i) => (
               <path key={i} d={caminhoFolha(f.c, !detalhe)} transform={`translate(${f.x} ${f.y}) rotate(${f.a})`} />
             ))}
-          </g>
-          {/* espaço vazado em volta de cada frutinha, que fica solta entre os galhos */}
-          <g fill="black">
-            {FRUTOS.map((f, i) => <circle key={i} cx={f.x} cy={f.y} r={f.r + FOLGA_FRUTO} />)}
-          </g>
-          <g fill="white">
             {FRUTOS.map((f, i) => <circle key={i} cx={f.x} cy={f.y} r={f.r} />)}
           </g>
           {detalhe && FOLHAS.map((f, i) => (
