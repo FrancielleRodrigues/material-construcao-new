@@ -12,7 +12,7 @@ Sistema de gestão (mini ERP) para loja de material de construção: clientes, f
 3. **Variáveis** — copie `.env.example` para `.env.local` e preencha a URL e a chave **publishable** (*Project Settings → API*). Nunca use a chave secret/service_role no front-end.
 4. `npm install` e `npm run dev`; entre com o e-mail/senha do passo 2.
 
-Para cadastrar outras pessoas: em *Usuários* do sistema (papel e acesso) **e** em *Authentication → Users* do Supabase (senha), com o mesmo e-mail.
+Para cadastrar outras pessoas, use só *Usuários → Novo usuário*: o sistema cria o cadastro (papel e acesso) **e o login**, com uma **senha provisória** (já vem uma gerada; você a vê uma vez para passar à pessoa). No primeiro acesso ela é obrigada a criar uma senha própria. Para quem ainda não tem login, ou esqueceu a senha, use o botão da chave na lista de usuários. O login é criado pela função `definir-acesso` (pasta `supabase/functions/definir-acesso`), publicada no Supabase: ela usa a chave de administrador, que só existe no servidor.
 
 ## Publicar (recomendado: Cloudflare Pages + domínio próprio)
 

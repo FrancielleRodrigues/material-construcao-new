@@ -6,7 +6,13 @@ import { TelaAviso } from "./TelaAviso";
 
 const MINIMO = 12;
 
-export function NovaSenhaScreen({ onSalvar, onCancelar }) {
+export function NovaSenhaScreen({
+  onSalvar,
+  onCancelar,
+  titulo = "Defina uma nova senha",
+  subtitulo = `Escolha uma senha com pelo menos ${MINIMO} caracteres. Evite datas, nomes e senhas usadas em outros sites.`,
+  rotuloBotao = "Salvar nova senha",
+}) {
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState("");
@@ -27,7 +33,7 @@ export function NovaSenhaScreen({ onSalvar, onCancelar }) {
   }
 
   return (
-    <TelaAviso titulo="Defina uma nova senha" subtitulo={`Escolha uma senha com pelo menos ${MINIMO} caracteres. Evite datas, nomes e senhas usadas em outros sites.`}>
+    <TelaAviso titulo={titulo} subtitulo={subtitulo}>
       <form onSubmit={enviar} className="space-y-4">
         <Campo label="Nova senha">
           <input
@@ -55,7 +61,7 @@ export function NovaSenhaScreen({ onSalvar, onCancelar }) {
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 text-white text-sm font-medium hover:bg-teal-800 disabled:opacity-60 transition-colors"
         >
           {enviando && <Loader2 size={15} className="animate-spin" />}
-          Salvar nova senha
+          {rotuloBotao}
         </button>
         <button type="button" onClick={onCancelar} className="w-full text-sm text-stone-500 hover:text-stone-700">
           Cancelar e sair

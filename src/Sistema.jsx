@@ -16,6 +16,8 @@ import { ProdutoForm } from "./modules/produtos/ProdutoForm";
 import { MovimentacaoForm } from "./modules/estoque/MovimentacaoForm";
 import { PedidoForm } from "./modules/compras/PedidoForm";
 import { ImportarNotaModal } from "./modules/compras/ImportarNotaModal";
+import { SenhaUsuarioModal } from "./modules/usuarios/SenhaUsuarioModal";
+import { AcessoCriadoModal } from "./modules/usuarios/AcessoCriadoModal";
 import { UsuarioForm } from "./modules/usuarios/UsuarioForm";
 import { PapelForm } from "./modules/usuarios/PapelForm";
 import { statusLancamento } from "./modules/financeiro/financeiroUi";
@@ -48,6 +50,8 @@ export default function Sistema({ userId, email, onSair }) {
   const [papeis, setPapeis] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
   const [formUsuario, setFormUsuario] = useState(null);
+  const [senhaUsuario, setSenhaUsuario] = useState(null); // usuário que vai receber senha provisória
+  const [credenciais, setCredenciais] = useState(null); // e-mail + senha mostrados uma vez ao administrador
   const [formPapel, setFormPapel] = useState(null);
   const [subUsuarios, setSubUsuarios] = useState("usuarios");
   const [menuSessaoAberto, setMenuSessaoAberto] = useState(false);
@@ -319,9 +323,29 @@ export default function Sistema({ userId, email, onSair }) {
     setFormPedido(null);
   }
 
+  // Usuário novo: grava o cadastro (papel e acesso) e cria o login com a senha provisória (função do servidor).
   async function salvarUsuario(dados) {
-    if (!(await executar(() => api.salvarUsuario(dados), ["usuarios"]))) return;
+    const { senha, ...cadastro } = dados;
+    const novo = !cadastro.id;
+    if (!(await executar(() => api.salvarUsuario(cadastro), ["usuarios"]))) return;
     setFormUsuario(null);
+    if (novo && senha) {
+      const ok = await executar(
+        () =>
+          api.definirAcessoUsuario(cadastro.email, senha).catch((e) => {
+            throw new Error(`O usuário foi cadastrado, mas o login não foi criado: ${e.message} Use o botão da chave na lista para tentar de novo.`);
+          }),
+        ["usuarios"]
+      );
+      if (ok) setCredenciais({ nome: cadastro.nome, email: cadastro.email.trim(), senha, criado: true });
+    }
+  }
+
+  // Cria o login de quem ainda não tem, ou troca a senha de quem esqueceu (sempre provisória).
+  async function definirSenhaUsuario(usuario, senha) {
+    if (!(await executar(() => api.definirAcessoUsuario(usuario.email, senha), ["usuarios"]))) return;
+    setSenhaUsuario(null);
+    setCredenciais({ nome: usuario.nome, email: usuario.email, senha, criado: !usuario.authId });
   }
 
   async function salvarPapel(dados) {
@@ -988,6 +1012,7 @@ export default function Sistema({ userId, email, onSair }) {
               setConfirmacao={setConfirmacao}
               setFormPapel={setFormPapel}
               setFormUsuario={setFormUsuario}
+              setSenhaUsuario={setSenhaUsuario}
               setSubUsuarios={setSubUsuarios}
               subUsuarios={subUsuarios}
               usuarioLogadoId={usuarioAtual.id}
@@ -1033,6 +1058,10 @@ export default function Sistema({ userId, email, onSair }) {
           onCancelar={() => setFormUsuario(null)}
         />
       )}
+      {senhaUsuario && (
+        <SenhaUsuarioModal usuario={senhaUsuario} onSalvar={(senha) => definirSenhaUsuario(senhaUsuario, senha)} onCancelar={() => setSenhaUsuario(null)} />
+      )}
+      {credenciais && <AcessoCriadoModal credenciais={credenciais} onFechar={() => setCredenciais(null)} />}
       {formPapel !== null && (
         <PapelForm
           inicial={formPapel.id ? formPapel : null}

@@ -25,6 +25,7 @@ const STUB = `
 const PARSERS = { 20: (v) => Number(v), 1700: (v) => Number(v), 1082: (v) => v, 1114: (v) => v, 1184: (v) => v };
 const SENHA = "senha123";
 const senhas = {}; // senhas trocadas durante o teste (e-mail em minúsculas → senha)
+const metadados = {}; // user_metadata de cada login (e-mail em minúsculas → objeto), ex.: { trocar_senha: true }
 
 let emailAtual = null; // usuário logado (JWT simulado)
 let uidAtual = null;
@@ -42,6 +43,7 @@ const pronto = (async () => {
 window.__db = pronto; // para os testes inspecionarem o banco
 window.__fake = {
   emailsEnviados: [],
+  falharAcesso: "", // texto: faz a "função" definir-acesso falhar (para testar a mensagem de erro)
   // Simula o clique no link do e-mail: o Supabase abre uma sessão e avisa PASSWORD_RECOVERY.
   async clicarLinkRecuperacao(email) {
     const db = await pronto;
@@ -54,6 +56,11 @@ window.__fake = {
     ouvintes.forEach((cb) => cb("SIGNED_IN", sessao));
   },
 };
+
+// usuário da sessão, como o Supabase devolve (inclui o user_metadata)
+function usuarioAtual() {
+  return { id: uidAtual, email: emailAtual, user_metadata: metadados[emailAtual.toLowerCase()] || {} };
+}
 
 const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
 
@@ -166,14 +173,49 @@ class ConsultaRpc {
   }
 }
 
+// Imita a Edge Function "definir-acesso" (supabase/functions/definir-acesso/index.ts) com as mesmas
+// regras: só quem está logado, ativo e com "usuarios: editar" cria/redefine o login de alguém já
+// cadastrado em Usuários, com senha provisória (12 a 72 caracteres) e a marca trocar_senha.
+async function definirAcesso(corpo) {
+  if (window.__fake.falharAcesso) return { data: null, error: { message: "Edge Function returned a non-2xx status code", context: { json: async () => ({ erro: window.__fake.falharAcesso }), status: 500 } } };
+  const falha = (erro, status) => ({ data: null, error: { message: "Edge Function returned a non-2xx status code", context: { json: async () => ({ erro }), status } } });
+  if (!emailAtual) return falha("Faça login para continuar.", 401);
+  const db = await pronto;
+  const eu = (await db.query("select u.ativo, p.permissoes->>'usuarios' as nivel from usuarios u join papeis p on p.id = u.papel_id where u.auth_id = $1", [uidAtual])).rows[0];
+  if (!eu?.ativo) return falha("Seu usuário não tem acesso ao sistema.", 403);
+  if (eu.nivel !== "editar") return falha("Você não tem permissão para gerenciar usuários.", 403);
+  const email = String(corpo?.email ?? "").trim().toLowerCase();
+  const senha = String(corpo?.senha ?? "");
+  if (!/^\S+@\S+\.\S+$/.test(email)) return falha("E-mail inválido.", 400);
+  if (senha.length < 12 || senha.length > 72) return falha("A senha provisória deve ter de 12 a 72 caracteres.", 400);
+  const alvo = (await db.query("select id from usuarios where lower(btrim(email)) = $1", [email])).rows[0];
+  if (!alvo) return falha("Esse e-mail não está cadastrado em Usuários. Cadastre a pessoa primeiro.", 404);
+  const existente = (await db.query("select id from auth.users where lower(email) = $1", [email])).rows[0];
+  if (existente) {
+    await db.query("update auth.users set email_confirmed_at = coalesce(email_confirmed_at, now()) where id = $1", [existente.id]);
+  } else {
+    await db.query("insert into auth.users (email, email_confirmed_at) values ($1, now())", [email]);
+  }
+  senhas[email] = senha;
+  metadados[email] = { ...metadados[email], trocar_senha: true };
+  return { data: { ok: true, criado: !existente }, error: null };
+}
+
 export const supabase = {
   from: (tabela) => new Consulta(tabela),
+
+  functions: {
+    async invoke(nome, { body } = {}) {
+      if (nome !== "definir-acesso") return { data: null, error: { message: "Requested function was not found", context: { json: async () => ({}), status: 404 } } };
+      return definirAcesso(body);
+    },
+  },
 
   rpc: (nome, args = {}) => new ConsultaRpc(nome, args),
 
   auth: {
     async getSession() {
-      return { data: { session: emailAtual ? { user: { id: uidAtual, email: emailAtual } } : null } };
+      return { data: { session: emailAtual ? { user: usuarioAtual() } : null } };
     },
     onAuthStateChange(cb) {
       ouvintes.add(cb);
@@ -188,7 +230,7 @@ export const supabase = {
       if (!r.rows.length) r = await db.query("insert into auth.users (email, email_confirmed_at) values ($1, now()) returning id", [email]);
       emailAtual = email;
       uidAtual = r.rows[0].id;
-      ouvintes.forEach((cb) => cb("SIGNED_IN", { user: { id: uidAtual, email } }));
+      ouvintes.forEach((cb) => cb("SIGNED_IN", { user: usuarioAtual() }));
       return { error: null };
     },
     // "Esqueci minha senha": guarda o pedido (o teste confere) e responde igual exista o e-mail ou não.
@@ -196,13 +238,14 @@ export const supabase = {
       window.__fake.emailsEnviados.push({ email, redirectTo: opcoes?.redirectTo });
       return { data: {}, error: null };
     },
-    async updateUser({ password }) {
+    async updateUser({ password, data }) {
       if (!emailAtual) return { data: null, error: { message: "Auth session missing!", code: "session_not_found" } };
       if (password === (senhas[emailAtual.toLowerCase()] ?? SENHA)) {
         return { data: null, error: { message: "New password should be different from the old password.", code: "same_password" } };
       }
-      senhas[emailAtual.toLowerCase()] = password;
-      return { data: { user: { id: uidAtual, email: emailAtual } }, error: null };
+      if (password) senhas[emailAtual.toLowerCase()] = password;
+      if (data) metadados[emailAtual.toLowerCase()] = { ...metadados[emailAtual.toLowerCase()], ...data };
+      return { data: { user: usuarioAtual() }, error: null };
     },
     async signOut() {
       emailAtual = null;

@@ -1,5 +1,6 @@
 import { supabaseConfigurado, variaveisFaltando } from "./lib/supabase";
 import { useSessao } from "./hooks/useSessao";
+import { useState } from "react";
 import { entrar, sair, enviarRecuperacao, definirNovaSenha } from "./data/api";
 import Sistema from "./Sistema";
 import { LoginScreen } from "./modules/auth/LoginScreen";
@@ -9,6 +10,7 @@ import { TelaCarregando } from "./modules/auth/TelaCarregando";
 
 function Autenticado() {
   const { sessao, carregando, recuperando, concluirRecuperacao, erroLink } = useSessao();
+  const [trocouPara, setTrocouPara] = useState(null); // id de quem acabou de trocar a senha provisória
   if (carregando) return <TelaCarregando mensagem="Verificando seu acesso" />;
   // Chegou pelo link do e-mail: primeiro define a nova senha, depois entra no sistema.
   if (sessao && recuperando) {
@@ -17,6 +19,21 @@ function Autenticado() {
         onSalvar={async (senha) => {
           await definirNovaSenha(senha);
           concluirRecuperacao();
+        }}
+        onCancelar={sair}
+      />
+    );
+  }
+  // Primeiro acesso com a senha provisória que o administrador passou: precisa criar a própria senha.
+  if (sessao && sessao.user?.user_metadata?.trocar_senha === true && trocouPara !== sessao.user.id) {
+    return (
+      <NovaSenhaScreen
+        titulo="Crie a sua senha"
+        subtitulo="Você entrou com uma senha provisória. Escolha uma senha só sua (pelo menos 12 caracteres) para continuar."
+        rotuloBotao="Salvar e entrar"
+        onSalvar={async (senha) => {
+          await definirNovaSenha(senha);
+          setTrocouPara(sessao.user.id);
         }}
         onCancelar={sair}
       />

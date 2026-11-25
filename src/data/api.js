@@ -261,8 +261,10 @@ export async function enviarRecuperacao(email) {
 }
 
 // Chamada na tela aberta pelo link do e-mail (a sessão de recuperação já está ativa).
+// Também tira a marca de "senha provisória" (trocar_senha), usada no primeiro acesso de quem foi cadastrado
+// por um administrador. A marca é só para a tela pedir a troca; a segurança está na senha em si.
 export async function definirNovaSenha(senha) {
-  const { error } = await supabase.auth.updateUser({ password: senha });
+  const { error } = await supabase.auth.updateUser({ password: senha, data: { trocar_senha: false } });
   if (error) {
     const t = `${error.message} ${error.code || ""}`;
     if (/same_password|different from the old/i.test(t)) throw new ErroApi("A nova senha precisa ser diferente da atual.");
@@ -271,6 +273,24 @@ export async function definirNovaSenha(senha) {
     if (/at least|characters/i.test(t)) throw new ErroApi("A senha é curta demais. Use pelo menos 12 caracteres.");
     throw new ErroApi(traduzir(error));
   }
+}
+
+// Cria (ou redefine) o login de um usuário já cadastrado, com senha provisória. Roda numa função do
+// servidor (Edge Function "definir-acesso"), porque exige a chave de administrador do Supabase.
+export async function definirAcessoUsuario(email, senha) {
+  const { data, error } = await supabase.functions.invoke("definir-acesso", { body: { email, senha } });
+  if (error) {
+    let mensagem = "";
+    try {
+      mensagem = (await error.context.json())?.erro || "";
+    } catch {
+      /* sem corpo legível */
+    }
+    if (!mensagem && /failed to fetch|network|load failed/i.test(error.message || "")) mensagem = "Sem conexão com o servidor. Verifique a internet e tente de novo.";
+    if (!mensagem && /not found|404/i.test(error.message || "")) mensagem = "A função de acesso ainda não foi publicada no Supabase.";
+    throw new ErroApi(mensagem || "Não foi possível definir o acesso agora.");
+  }
+  return data;
 }
 
 export async function sair() {

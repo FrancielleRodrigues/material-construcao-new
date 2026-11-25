@@ -5,11 +5,14 @@ import { Campo } from "../../components/ui/Campo";
 import { Painel } from "../../components/ui/Painel";
 import { RodapePainel } from "../../components/ui/RodapePainel";
 import { inputClasses } from "../../components/ui/inputClasses";
+import { CampoSenhaProvisoria } from "../../components/CampoSenhaProvisoria";
+import { gerarSenhaProvisoria, MINIMO_SENHA } from "../../utils/senha";
 
 export function UsuarioForm({ inicial, papeis, onSalvar, onCancelar }) {
   const [form, setForm] = useState(
     inicial || { nome: "", email: "", papelId: papeis.find((p) => !p.fixo)?.id || papeis[0]?.id || "", ativo: true }
   );
+  const [senha, setSenha] = useState(() => gerarSenhaProvisoria()); // só para usuário novo
   const [erro, setErro] = useState("");
 
   function salvar() {
@@ -21,7 +24,11 @@ export function UsuarioForm({ inicial, papeis, onSalvar, onCancelar }) {
       setErro("Selecione um papel.");
       return;
     }
-    onSalvar(form);
+    if (!inicial && senha.length < MINIMO_SENHA) {
+      setErro(`A senha provisória precisa ter pelo menos ${MINIMO_SENHA} caracteres.`);
+      return;
+    }
+    onSalvar(inicial ? form : { ...form, senha });
   }
 
   return (
@@ -73,10 +80,16 @@ export function UsuarioForm({ inicial, papeis, onSalvar, onCancelar }) {
           Usuário ativo (desmarque para bloquear o acesso sem excluir o cadastro)
         </label>
 
-        {!inicial && (
+        {!inicial ? (
+          <>
+            <CampoSenhaProvisoria valor={senha} onChange={setSenha} />
+            <p className="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 -mt-2">
+              O sistema cria o login com esta senha. No primeiro acesso a pessoa será obrigada a escolher uma senha própria. Depois de salvar, você vê a senha uma vez para passar a ela.
+            </p>
+          </>
+        ) : (
           <p className="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
-            Este cadastro define o papel e o acesso. A senha de login é criada à parte, no painel do Supabase
-            (Authentication → Users → Add user), usando o mesmo e-mail.
+            Para criar o login de quem ainda não tem, ou trocar a senha de quem esqueceu, use o botão da chave na lista de usuários.
           </p>
         )}
 

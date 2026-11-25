@@ -1,4 +1,4 @@
-import { Lock, UserCog, Plus, Pencil, Trash2, ScrollText } from "lucide-react";
+import { Lock, UserCog, Plus, Pencil, Trash2, ScrollText, KeyRound } from "lucide-react";
 import { cn, iniciais } from "../../utils/format";
 import { MODULOS_PERMISSAO } from "../../data/constantes";
 import { usePaginacao } from "../../hooks/usePaginacao";
@@ -37,6 +37,7 @@ export function UsuariosView({
   setConfirmacao,
   setFormPapel,
   setFormUsuario,
+  setSenhaUsuario,
   setSubUsuarios,
   subUsuarios,
   usuarioLogadoId,
@@ -106,6 +107,16 @@ export function UsuariosView({
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    {podeAuditar && (
+                      <button
+                        onClick={() => setSenhaUsuario(u)}
+                        className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800"
+                        aria-label={`Definir senha de ${u.nome}`}
+                        title="Criar login / definir senha provisória"
+                      >
+                        <KeyRound size={14} />
+                      </button>
+                    )}
                     <button onClick={() => setFormUsuario(u)} className="w-8 h-8 rounded-md flex items-center justify-center text-stone-400 border border-stone-200 hover:text-teal-800">
                       <Pencil size={14} />
                     </button>

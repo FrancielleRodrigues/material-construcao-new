@@ -240,8 +240,11 @@ test("Usuários: criar usuário e papel; e-mail repetido é recusado", async () 
   await p.getByPlaceholder("Nome completo").fill("Paula Estoque");
   await p.getByPlaceholder("usuario@empresa.com").fill("paula@teste.com");
   await p.getByRole("button", { name: "Salvar" }).click();
+  await p.getByRole("heading", { name: "Acesso criado" }).waitFor({ timeout: 15000 }); // o login nasce junto, com senha provisória
+  await p.getByRole("button", { name: "Fechar", exact: true }).last().click();
   await p.locator("main").getByText("Paula Estoque").first().waitFor({ timeout: 15000 });
   assert.equal((await num(p, "select papel_id from usuarios where email = 'paula@teste.com'")).papel_id.length > 0, true);
+  assert.equal((await num(p, "select auth_id is not null as tem_login from usuarios where email = 'paula@teste.com'")).tem_login, true);
 
   await p.getByRole("button", { name: /Papéis/ }).click();
   await p.getByRole("button", { name: /Novo papel/ }).click();
