@@ -140,3 +140,17 @@ test("Quem não edita Usuários não vê o botão da chave", async () => {
   assert.equal(await p.getByRole("button", { name: "Usuários", exact: true }).count(), 0);
   await p.close();
 });
+
+test("Login: o olho mostra e oculta a senha digitada", async () => {
+  const p = await app.novaPagina();
+  await p.getByRole("button", { name: "Entrar" }).waitFor();
+  const campo = p.locator("form input").nth(1);
+  await campo.fill("segredo-123");
+  assert.equal(await campo.getAttribute("type"), "password");
+  await p.getByRole("button", { name: "Mostrar senha" }).click();
+  assert.equal(await campo.getAttribute("type"), "text");
+  assert.equal(await campo.inputValue(), "segredo-123");
+  await p.getByRole("button", { name: "Ocultar senha" }).click();
+  assert.equal(await campo.getAttribute("type"), "password");
+  await p.close();
+});

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { inputClasses } from "../../components/ui/inputClasses";
 import { Campo } from "../../components/ui/Campo";
+import { InputSenha } from "../../components/InputSenha";
 import { TelaAviso } from "./TelaAviso";
 
 const BOTAO = "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 text-white text-sm font-medium hover:bg-teal-800 disabled:opacity-60 transition-colors";
@@ -73,12 +74,10 @@ export function LoginScreen({ onEntrar, onRecuperar, avisoInicial = "" }) {
         </Campo>
         {!recuperando && (
           <Campo label="Senha">
-            <input
-              type="password"
+            <InputSenha
               autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className={inputClasses}
             />
           </Campo>
         )}

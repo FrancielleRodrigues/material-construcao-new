@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { inputClasses } from "../../components/ui/inputClasses";
 import { Campo } from "../../components/ui/Campo";
+import { InputSenha } from "../../components/InputSenha";
 import { TelaAviso } from "./TelaAviso";
 
 const MINIMO = 12;
@@ -36,22 +36,18 @@ export function NovaSenhaScreen({
     <TelaAviso titulo={titulo} subtitulo={subtitulo}>
       <form onSubmit={enviar} className="space-y-4">
         <Campo label="Nova senha">
-          <input
-            type="password"
+          <InputSenha
             autoComplete="new-password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            className={inputClasses}
             autoFocus
           />
         </Campo>
         <Campo label="Repita a nova senha">
-          <input
-            type="password"
+          <InputSenha
             autoComplete="new-password"
             value={confirmacao}
             onChange={(e) => setConfirmacao(e.target.value)}
-            className={inputClasses}
           />
         </Campo>
         {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
