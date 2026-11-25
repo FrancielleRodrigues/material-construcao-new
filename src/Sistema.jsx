@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Plus, Search, X, ChevronRight, Menu, ChevronDown, Eye, LogOut } from "lucide-react";
 import { cn, iniciais, hojeISO, formatarEndereco } from "./utils/format";
 import { ArvoreCedro } from "./components/ArvoreCedro";
+import { TelaCarregando } from "./modules/auth/TelaCarregando";
 import { mascararCep } from "./utils/mascaras";
 import { buscarCep } from "./utils/cep";
 import { NAV_ITEMS, TITULOS_ABA } from "./data/constantes";
@@ -516,7 +517,7 @@ export default function Sistema({ userId, email, onSair }) {
     await executar(() => api.mudarStatusEntrega(id, "cancelada"), ["entregas"]);
   }
 
-  if (carregando) return <TelaAviso titulo="Carregando seus dados..." />;
+  if (carregando) return <TelaCarregando mensagem="Carregando seus dados" />;
   if (falhaCarga) {
     return (
       <TelaAviso titulo="Não foi possível carregar" subtitulo={falhaCarga}>

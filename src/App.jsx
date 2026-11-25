@@ -5,10 +5,11 @@ import Sistema from "./Sistema";
 import { LoginScreen } from "./modules/auth/LoginScreen";
 import { NovaSenhaScreen } from "./modules/auth/NovaSenhaScreen";
 import { TelaAviso } from "./modules/auth/TelaAviso";
+import { TelaCarregando } from "./modules/auth/TelaCarregando";
 
 function Autenticado() {
   const { sessao, carregando, recuperando, concluirRecuperacao, erroLink } = useSessao();
-  if (carregando) return <TelaAviso titulo="Carregando..." />;
+  if (carregando) return <TelaCarregando mensagem="Verificando seu acesso" />;
   // Chegou pelo link do e-mail: primeiro define a nova senha, depois entra no sistema.
   if (sessao && recuperando) {
     return (

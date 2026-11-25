@@ -9,3 +9,21 @@
   .so-impressao { display: block !important; width: 74mm; margin: 0; }
   body { background: #fff !important; }
 }
+
+/* Tela de carregamento: a árvore "brota" (folhas e bolinhas aparecem em sequência) e uma barra corre. */
+@keyframes cedro-brotar {
+  0%, 6% { transform: scale(0); opacity: 0; }
+  26%, 80% { transform: scale(1); opacity: 1; }
+  96%, 100% { transform: scale(1); opacity: 0; }
+}
+.cedro-brota { animation: cedro-brotar 3.6s ease-in-out infinite both; transform-origin: 0 0; }
+.cedro-brota-centro { transform-box: fill-box; transform-origin: center; }
+@keyframes cedro-barra {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(310%); }
+}
+.cedro-barra { animation: cedro-barra 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .cedro-brota { animation: none; }
+  .cedro-barra { animation: none; transform: translateX(100%); }
+}
