@@ -85,17 +85,26 @@ export const notasFiscais = {
 
 export const empresaFiscal = {
   de: (r) => ({
-    razaoSocial: r.razao_social, nomeFantasia: r.nome_fantasia, cnpj: r.cnpj, ie: r.ie,
-    regimeTributario: r.regime_tributario, ambiente: r.ambiente, provedor: r.provedor,
-    certificadoInstalado: r.certificado_instalado, serieNFe: r.serie_nfe, proximoNumero: r.proximo_numero,
-    endereco: r.endereco || {}, telefone: r.telefone || "",
+    ambiente: r.ambiente, provedor: r.provedor, certificadoInstalado: r.certificado_instalado,
+    serieNFe: r.serie_nfe, proximoNumero: r.proximo_numero,
   }),
   para: (e) => ({
-    razao_social: texto(e.razaoSocial), nome_fantasia: texto(e.nomeFantasia), cnpj: texto(e.cnpj), ie: texto(e.ie),
-    regime_tributario: e.regimeTributario, ambiente: e.ambiente, provedor: texto(e.provedor),
-    endereco: e.endereco && typeof e.endereco === "object" ? e.endereco : {}, telefone: texto(e.telefone),
+    ambiente: e.ambiente, provedor: texto(e.provedor),
     certificado_instalado: Boolean(e.certificadoInstalado), serie_nfe: texto(e.serieNFe) || "1",
     proximo_numero: Math.max(1, parseInt(e.proximoNumero) || 1),
+  }),
+};
+
+export const empresa = {
+  de: (r) => ({
+    razaoSocial: r.razao_social, nomeFantasia: r.nome_fantasia, cnpj: r.cnpj, ie: r.ie, im: r.im,
+    regimeTributario: r.regime_tributario, telefone: r.telefone, email: r.email, site: r.site,
+    mensagemCupom: r.mensagem_cupom, endereco: r.endereco || {},
+  }),
+  para: (e) => ({
+    razao_social: texto(e.razaoSocial), nome_fantasia: texto(e.nomeFantasia), cnpj: texto(e.cnpj), ie: texto(e.ie), im: texto(e.im),
+    regime_tributario: e.regimeTributario, telefone: texto(e.telefone), email: texto(e.email), site: texto(e.site),
+    mensagem_cupom: texto(e.mensagemCupom), endereco: e.endereco && typeof e.endereco === "object" ? e.endereco : {},
   }),
 };
 

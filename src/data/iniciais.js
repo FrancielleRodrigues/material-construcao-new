@@ -132,11 +132,16 @@ export const VENDAS_INICIAIS = [
   },
 ];
 
-export const EMPRESA_FISCAL_INICIAL = {
-  razaoSocial: "", nomeFantasia: "", cnpj: "", ie: "",
-  telefone: "",
-  endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
+// Dados cadastrais da loja (módulo Empresa).
+export const EMPRESA_INICIAL = {
+  razaoSocial: "", nomeFantasia: "", cnpj: "", ie: "", im: "",
   regimeTributario: "simples_nacional",
+  telefone: "", email: "", site: "", mensagemCupom: "",
+  endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
+};
+
+// Parâmetros de emissão da NF-e (módulo Fiscal). A identidade da empresa fica em EMPRESA_INICIAL.
+export const EMPRESA_FISCAL_INICIAL = {
   ambiente: "homologacao",
   provedor: "",
   certificadoInstalado: false,

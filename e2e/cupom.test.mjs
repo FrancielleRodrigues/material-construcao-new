@@ -14,8 +14,8 @@ async function vender(email) {
   const p = await app.novaPagina(1280);
   // empresa configurada e um SKU no produto, antes do login (as listas são lidas ao entrar)
   await exec(p, `
-    update empresa_fiscal set razao_social = 'Construgestao Materiais Ltda', nome_fantasia = 'Construgestao',
-      cnpj = '11.222.333/0001-81', telefone = '(27) 3333-4455',
+    update empresa set razao_social = 'Construgestao Materiais Ltda', nome_fantasia = 'Construgestao',
+      cnpj = '11.222.333/0001-81', telefone = '(27) 3333-4455', email = 'loja@construgestao.com.br', mensagem_cupom = 'Obrigado pela preferencia!',
       endereco = '{"logradouro":"Rua Luciano das Neves","numero":"2418","bairro":"Divino Espirito Santo","cidade":"Vila Velha","uf":"ES"}'::jsonb;
     update produtos set sku = 'CIM-50' where id = 1;`);
   await entrar(p, email);
@@ -44,7 +44,8 @@ test("Cupom: layout do DANFE NFC-e com empresa, itens, totais, consumidor e avis
   assert.match(texto, /CONSTRUGESTAO/);
   assert.match(texto, /CNPJ: 11\.222\.333\/0001-81/);
   assert.match(texto, /Rua Luciano das Neves, 2418 - Divino Espirito Santo, Vila Velha - ES/);
-  assert.match(texto, /Tel\.: \(27\) 3333-4455/);
+  assert.match(texto, /Tel\.: \(27\) 3333-4455 · loja@construgestao\.com\.br/);
+  assert.match(texto, /Obrigado pela preferencia!/, "mensagem de rodapé cadastrada na Empresa");
   assert.match(texto, /COMPROVANTE DE VENDA/);
   assert.match(texto, /Rascunho de NFC-e: não emitido na SEFAZ/);
   assert.match(texto, /CIM-50 Cimento CP-II 50kg/, "código do produto + descrição");
@@ -78,19 +79,5 @@ test("Cupom: ao imprimir some o sistema e sobra só o cupom em largura de bobina
   assert.ok(largura > 250 && largura < 320, `largura de bobina (74 mm ≈ 280 px), veio ${largura}`);
   await p.emulateMedia({ media: "screen" });
   assert.equal(await impressao.isVisible(), false, "na tela a cópia de impressão fica escondida");
-  await p.close();
-});
-
-test("Fiscal: o endereço da empresa pode ser preenchido e é salvo", async () => {
-  const p = await app.novaPagina(1280);
-  await entrar(p, "admin@teste.com");
-  await p.getByText("Clientes cadastrados").waitFor({ timeout: 40000 });
-  await p.getByRole("button", { name: "Fiscal", exact: true }).first().click();
-  await p.getByRole("button", { name: /Configuração|Config/ }).first().click();
-  await p.getByPlaceholder("Número da IE").first().waitFor();
-  await p.getByPlaceholder("Preenchido pelo CEP").first().fill("Av. do Teste");
-  await p.getByPlaceholder("Ex: 1200").first().fill("77");
-  await p.getByRole("button", { name: /Salvar/ }).first().click();
-  await p.waitForFunction(async () => (await (await window.__db).query("select endereco->>'logradouro' l, endereco->>'numero' n from empresa_fiscal")).rows[0].l === "Av. do Teste");
   await p.close();
 });

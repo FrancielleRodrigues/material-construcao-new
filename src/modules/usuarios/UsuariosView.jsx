@@ -7,7 +7,7 @@ import { Paginacao } from "../../components/Paginacao";
 const ROTULO_TABELA = {
   produtos: "Produto", clientes: "Cliente", fornecedores: "Fornecedor", lancamentos: "Lançamento",
   entregas: "Entrega", pedidos_compra: "Pedido de compra", usuarios: "Usuário", papeis: "Papel",
-  empresa_fiscal: "Configuração fiscal",
+  empresa_fiscal: "Configuração fiscal", empresa: "Dados da empresa",
 };
 const ROTULO_OPERACAO = { INSERT: "Criou", UPDATE: "Alterou", DELETE: "Excluiu" };
 
@@ -137,7 +137,7 @@ export function UsuariosView({
                       <p className="text-sm text-stone-800 min-w-0">
                         <strong>{a.quem}</strong> {ROTULO_OPERACAO[a.operacao].toLowerCase()}{" "}
                         {(ROTULO_TABELA[a.tabela] || a.tabela).toLowerCase()}
-                        {a.registroId && a.tabela !== "empresa_fiscal" ? ` nº ${a.registroId}` : ""}
+                        {a.registroId && a.tabela !== "empresa_fiscal" && a.tabela !== "empresa" ? ` nº ${a.registroId}` : ""}
                       </p>
                       <time className="text-xs text-stone-400 shrink-0">
                         {new Date(a.quando).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}

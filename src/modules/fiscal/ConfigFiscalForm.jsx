@@ -1,32 +1,15 @@
 import { useState } from "react";
-import { CheckCircle2, KeyRound } from "lucide-react";
+import { CheckCircle2, KeyRound, Building2 } from "lucide-react";
 import { cn } from "../../utils/format";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { REGIMES_TRIBUTARIOS, PROVEDORES_NFE } from "../../data/constantes";
+import { PROVEDORES_NFE } from "../../data/constantes";
 import { Campo } from "../../components/ui/Campo";
 import { inputClasses } from "../../components/ui/inputClasses";
-import { mascararCnpj, mascararTelefone, mascararCep } from "../../utils/mascaras";
-import { buscarCep } from "../../utils/cep";
 
-export function ConfigFiscalForm({ inicial, onSalvar }) {
-  const [form, setForm] = useState(() => ({
-    ...inicial,
-    telefone: mascararTelefone(inicial.telefone),
-    endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", ...(inicial.endereco || {}) },
-  }));
+export function ConfigFiscalForm({ inicial, emitente, irParaEmpresa, onSalvar }) {
+  const [form, setForm] = useState(inicial);
   const [salvo, setSalvo] = useState(false);
   const isSm = useMediaQuery("(min-width: 640px)");
-
-  const setEndereco = (campo, valor) => setForm((f) => ({ ...f, endereco: { ...f.endereco, [campo]: valor } }));
-
-  async function aoMudarCep(valor) {
-    const cep = mascararCep(valor);
-    setEndereco("cep", cep);
-    if (cep.length === 9) {
-      const achado = await buscarCep(cep);
-      if (achado) setForm((f) => ({ ...f, endereco: { ...f.endereco, ...achado, cep } }));
-    }
-  }
 
   function salvar() {
     onSalvar(form);
@@ -36,111 +19,20 @@ export function ConfigFiscalForm({ inicial, onSalvar }) {
 
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-6">
-      <div>
-        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Dados do emitente</p>
-        <div className="space-y-4">
-          <Campo label="Razão social">
-            <input
-              value={form.razaoSocial}
-              onChange={(e) => setForm({ ...form, razaoSocial: e.target.value })}
-              className={inputClasses}
-              placeholder="Ex: Construgestão Materiais Ltda"
-            />
-          </Campo>
-          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
-            <Campo label="Nome fantasia">
-              <input
-                value={form.nomeFantasia}
-                onChange={(e) => setForm({ ...form, nomeFantasia: e.target.value })}
-                className={inputClasses}
-                placeholder="Nome usado no dia a dia"
-              />
-            </Campo>
-            <Campo label="CNPJ">
-              <input
-                value={form.cnpj}
-                onChange={(e) => setForm({ ...form, cnpj: mascararCnpj(e.target.value) })}
-                className={inputClasses}
-                inputMode="numeric"
-                maxLength={18}
-                placeholder="00.000.000/0000-00"
-              />
-            </Campo>
-          </div>
-          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
-            <Campo label="Inscrição estadual">
-              <input
-                value={form.ie}
-                onChange={(e) => setForm({ ...form, ie: e.target.value })}
-                className={inputClasses}
-                placeholder="Número da IE"
-              />
-            </Campo>
-            <Campo label="Regime tributário">
-              <select
-                value={form.regimeTributario}
-                onChange={(e) => setForm({ ...form, regimeTributario: e.target.value })}
-                className={cn(inputClasses, "bg-white")}
-              >
-                {REGIMES_TRIBUTARIOS.map((r) => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
-                ))}
-              </select>
-            </Campo>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-5 border-t border-stone-100">
-        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Endereço da empresa</p>
-        <p className="text-xs text-stone-400 mb-3">Aparece no cabeçalho do cupom de venda.</p>
-        <div className="space-y-4">
-          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
-            <Campo label="CEP">
-              <input
-                value={form.endereco.cep}
-                onChange={(e) => aoMudarCep(e.target.value)}
-                className={inputClasses}
-                inputMode="numeric"
-                maxLength={9}
-                placeholder="00000-000"
-              />
-            </Campo>
-            <Campo label="Telefone">
-              <input
-                value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: mascararTelefone(e.target.value) })}
-                className={inputClasses}
-                inputMode="tel"
-                maxLength={15}
-                placeholder="(00) 00000-0000"
-              />
-            </Campo>
-          </div>
-          <Campo label="Logradouro">
-            <input
-              value={form.endereco.logradouro}
-              onChange={(e) => setEndereco("logradouro", e.target.value)}
-              className={inputClasses}
-              placeholder="Preenchido pelo CEP"
-            />
-          </Campo>
-          <div className={cn("grid gap-4", isSm ? "grid-cols-2" : "grid-cols-1")}>
-            <Campo label="Número">
-              <input value={form.endereco.numero} onChange={(e) => setEndereco("numero", e.target.value)} className={inputClasses} placeholder="Ex: 1200" />
-            </Campo>
-            <Campo label="Bairro">
-              <input value={form.endereco.bairro} onChange={(e) => setEndereco("bairro", e.target.value)} className={inputClasses} />
-            </Campo>
-          </div>
-          <div className={cn("grid gap-4", isSm ? "grid-cols-[1fr_100px]" : "grid-cols-1")}>
-            <Campo label="Cidade">
-              <input value={form.endereco.cidade} onChange={(e) => setEndereco("cidade", e.target.value)} className={inputClasses} />
-            </Campo>
-            <Campo label="UF">
-              <input value={form.endereco.uf} onChange={(e) => setEndereco("uf", e.target.value.toUpperCase().slice(0, 2))} className={inputClasses} placeholder="ES" />
-            </Campo>
-          </div>
+      <div className="flex items-start gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3.5">
+        <Building2 size={16} className="text-stone-400 shrink-0 mt-0.5" />
+        <div className="text-sm text-stone-600 min-w-0">
+          <p>
+            Os dados do emitente (razão social, CNPJ, inscrição estadual, regime tributário e endereço) ficam no módulo <strong>Empresa</strong>.
+          </p>
+          <p className="text-xs text-stone-500 mt-1" data-testid="emitente-resumo">
+            {emitente.razaoSocial ? <>{emitente.razaoSocial}{emitente.cnpj ? ` · CNPJ ${emitente.cnpj}` : " · CNPJ não informado"}</> : "Empresa ainda não cadastrada."}
+          </p>
+          {irParaEmpresa && (
+            <button type="button" onClick={irParaEmpresa} className="mt-2 text-xs font-medium text-teal-800 border border-teal-800 rounded-md px-2.5 py-1 hover:bg-teal-50">
+              Abrir dados da empresa
+            </button>
+          )}
         </div>
       </div>
 

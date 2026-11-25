@@ -4,7 +4,7 @@ import { cn, iniciais, hojeISO, formatarEndereco } from "./utils/format";
 import { mascararCep } from "./utils/mascaras";
 import { buscarCep } from "./utils/cep";
 import { NAV_ITEMS, TITULOS_ABA } from "./data/constantes";
-import { EMPRESA_FISCAL_INICIAL } from "./data/iniciais";
+import { EMPRESA_FISCAL_INICIAL, EMPRESA_INICIAL } from "./data/iniciais";
 import * as api from "./data/api";
 import { TelaAviso } from "./modules/auth/TelaAviso";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
@@ -32,6 +32,7 @@ import { VendaView } from "./modules/venda/VendaView";
 import { FiscalView } from "./modules/fiscal/FiscalView";
 import { UsuariosView } from "./modules/usuarios/UsuariosView";
 import { RelatoriosView } from "./modules/relatorios/RelatoriosView";
+import { EmpresaView } from "./modules/empresa/EmpresaView";
 import { EntregaForm } from "./modules/entregas/EntregaForm";
 
 export default function Sistema({ userId, email, onSair }) {
@@ -79,6 +80,7 @@ export default function Sistema({ userId, email, onSair }) {
   const [gerarNotaVenda, setGerarNotaVenda] = useState(true);
   const [etapaVenda, setEtapaVenda] = useState("inicio"); // inicio | cliente | produtos
   const [empresaFiscal, setEmpresaFiscal] = useState(EMPRESA_FISCAL_INICIAL);
+  const [empresa, setEmpresa] = useState(EMPRESA_INICIAL);
   const [notasFiscais, setNotasFiscais] = useState([]);
   const [subFiscal, setSubFiscal] = useState("pendentes");
   const [notaPreview, setNotaPreview] = useState(null);
@@ -101,6 +103,7 @@ export default function Sistema({ userId, email, onSair }) {
     notasFiscais: setNotasFiscais, usuarios: setUsuarios, papeis: setPapeis, auditoria: setAuditoria,
     // sem acesso ao módulo fiscal o banco devolve vazio: mantém o padrão
     empresaFiscal: (v) => v && setEmpresaFiscal(v),
+    empresa: (v) => v && setEmpresa(v),
   };
 
   async function recarregar(nomes) {
@@ -261,7 +264,9 @@ export default function Sistema({ userId, email, onSair }) {
     () => notasFiscais.map((n) => ({ ...n, venda: vendas.find((v) => v.id === n.vendaId) })),
     [notasFiscais, vendas]
   );
-  const integracaoConfigurada = Boolean(empresaFiscal.cnpj && empresaFiscal.provedor && empresaFiscal.certificadoInstalado);
+  // Quem emite: identidade (módulo Empresa) + parâmetros de emissão (módulo Fiscal).
+  const emitente = useMemo(() => ({ ...empresaFiscal, ...empresa }), [empresaFiscal, empresa]);
+  const integracaoConfigurada = Boolean(emitente.cnpj && emitente.provedor && emitente.certificadoInstalado);
 
   const entregasFiltradas = useMemo(() => {
     const digitosBusca = busca.replace(/\D/g, "");
@@ -461,7 +466,7 @@ export default function Sistema({ userId, email, onSair }) {
         dataEntrega: dataEntregaVenda,
         gerarNota: gerarNotaVenda,
       }),
-      ["produtos", "movimentacoes", "lancamentos", "vendas", "entregas", "notasFiscais", "empresaFiscal"]
+      ["produtos", "movimentacoes", "lancamentos", "vendas", "entregas", "notasFiscais", "empresaFiscal", "empresa"]
     );
     if (!r) return;
 
@@ -479,6 +484,11 @@ export default function Sistema({ userId, email, onSair }) {
     setNumeroVenda("");
     setStatusCepVenda("idle");
     setEnderecoEncontradoVenda(null);
+  }
+
+  // devolve true se salvou (a tela mostra "Salvo")
+  async function salvarEmpresa(dados) {
+    return Boolean(await executar(() => api.salvarEmpresa(dados), ["empresa"]));
   }
 
   async function salvarConfigFiscal(dados) {
@@ -524,7 +534,7 @@ export default function Sistema({ userId, email, onSair }) {
     );
   }
 
-  const barraBusca = !isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "usuarios" && (
+  const barraBusca = !isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "empresa" && aba !== "usuarios" && (
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <div style={{ position: "relative" }} className="flex-1 sm:max-w-sm">
           <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -711,7 +721,7 @@ export default function Sistema({ userId, email, onSair }) {
               </div>
             </div>
 
-            {isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "usuarios" && (
+            {isDesktop && aba !== "inicio" && aba !== "venda" && aba !== "fiscal" && aba !== "relatorios" && aba !== "empresa" && aba !== "usuarios" && (
               <div className="flex items-center gap-3 shrink-0">
                 <div style={{ position: "relative", width: "260px" }}>
                   <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -952,6 +962,8 @@ export default function Sistema({ userId, email, onSair }) {
               chavePaginacao={subFiscal}
               clientesPorId={clientesPorId}
               empresaFiscal={empresaFiscal}
+              emitente={emitente}
+              irParaEmpresa={podeVer("empresa") ? () => setAba("empresa") : null}
               gerarRascunhoNota={gerarRascunhoNota}
               integracaoConfigurada={integracaoConfigurada}
               notasComVenda={notasComVenda}
@@ -964,6 +976,7 @@ export default function Sistema({ userId, email, onSair }) {
             />
           )}
           {aba === "relatorios" && <RelatoriosView podeVer={podeVer} />}
+          {aba === "empresa" && <EmpresaView empresa={empresa} podeEditar={podeEditar("empresa")} onSalvar={salvarEmpresa} ocupado={ocupado} />}
           {aba === "usuarios" && (
             <UsuariosView
               chavePaginacao={subUsuarios}
@@ -1004,7 +1017,7 @@ export default function Sistema({ userId, email, onSair }) {
           produtos={produtos}
           fornecedores={fornecedores}
           pedidos={pedidos}
-          cnpjEmpresa={empresaFiscal.cnpj}
+          cnpjEmpresa={emitente.cnpj}
           onImportar={importarNota}
           buscarVinculos={api.codigosDoFornecedor}
           onCancelar={() => setImportandoNota(false)}
@@ -1065,7 +1078,7 @@ export default function Sistema({ userId, email, onSair }) {
         <CupomModal
           venda={cupomAtual}
           cliente={cupomAtual.clienteId ? clientesPorId[cupomAtual.clienteId] : null}
-          empresa={empresaFiscal}
+          empresa={emitente}
           produtosPorId={produtosPorId}
           operador={usuarioAtual?.nome}
           nota={notasFiscais.find((n) => n.vendaId === cupomAtual.id) || null}
@@ -1077,7 +1090,7 @@ export default function Sistema({ userId, email, onSair }) {
         <NotaPreviewModal
           nota={notaPreview}
           cliente={notaPreview.venda?.clienteId ? clientesPorId[notaPreview.venda.clienteId] : null}
-          empresaFiscal={empresaFiscal}
+          empresaFiscal={emitente}
           onFechar={() => setNotaPreview(null)}
         />
       )}

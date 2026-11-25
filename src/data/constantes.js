@@ -1,4 +1,4 @@
-import { Users, Package, Warehouse, Wallet, FileText, Truck, LayoutDashboard, ScanLine, FileClock, Navigation, PackageCheck, PackageX, Factory, PackageOpen, UserCog, BarChart3 } from "lucide-react";
+import { Users, Package, Warehouse, Wallet, FileText, Truck, LayoutDashboard, ScanLine, FileClock, Navigation, PackageCheck, PackageX, Factory, PackageOpen, UserCog, BarChart3, Building2 } from "lucide-react";
 
 export const IE_OPCOES = [
   { id: "contribuinte", label: "Contribuinte de ICMS" },
@@ -29,6 +29,7 @@ export const NAV_ITEMS = [
   { id: "fiscal", label: "Fiscal", icon: FileText, ativo: true },
   { id: "entregas", label: "Entregas", icon: Truck, ativo: true },
   { id: "relatorios", label: "Relatórios", icon: BarChart3, ativo: true },
+  { id: "empresa", label: "Empresa", icon: Building2, ativo: true },
   { id: "usuarios", label: "Usuários", icon: UserCog, ativo: true },
 ];
 
@@ -44,6 +45,7 @@ export const TITULOS_ABA = {
   fiscal: "Fiscal",
   entregas: "Entregas",
   relatorios: "Relatórios",
+  empresa: "Empresa",
   usuarios: "Usuários",
 };
 
@@ -80,6 +82,7 @@ export const MODULOS_PERMISSAO = [
   { id: "fiscal", label: "Fiscal" },
   { id: "entregas", label: "Entregas" },
   { id: "relatorios", label: "Relatórios" },
+  { id: "empresa", label: "Empresa" },
   { id: "usuarios", label: "Usuários" },
 ];
 

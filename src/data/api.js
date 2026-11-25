@@ -82,6 +82,10 @@ const CARREGADORES = {
     const [linhas, itens] = await Promise.all([listar("vendas", false), listar("vendas_itens")]);
     return M.montarVendas(linhas, itens);
   },
+  empresa: async () => {
+    const linha = await chamar(supabase.from("empresa").select("*").maybeSingle());
+    return linha ? M.empresa.de(linha) : null;
+  },
   empresaFiscal: async () => {
     const linha = await chamar(supabase.from("empresa_fiscal").select("*").maybeSingle());
     return linha ? M.empresaFiscal.de(linha) : null;
@@ -177,6 +181,7 @@ export const alternarPago = (lancamento, hoje) =>
 
 export const mudarStatusEntrega = (id, status) => atualizar("entregas", id, { status });
 
+export const salvarEmpresa = (dados) => atualizar("empresa", 1, M.empresa.para(dados));
 export const salvarConfigFiscal = (dados) => atualizar("empresa_fiscal", 1, M.empresaFiscal.para(dados));
 
 // ---------- operações atômicas (funções do banco) ----------

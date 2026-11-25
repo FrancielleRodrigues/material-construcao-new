@@ -223,15 +223,14 @@ test("Estoque: movimentação manual atualiza saldo e histórico", async () => {
   assert.equal((await num(p, "select count(*)::int n from movimentacoes where produto_id = 1 and tipo = 'entrada' and quantidade = 5")).n, 1);
 });
 
-test("Fiscal: salvar configurações grava empresa_fiscal", async () => {
+test("Fiscal: salvar configurações grava os parâmetros de emissão em empresa_fiscal", async () => {
   const p = await logar();
   await aba(p, "Fiscal");
   await p.getByRole("button", { name: /Configurações/ }).click();
-  await p.getByPlaceholder("Ex: Construgestão Materiais Ltda").fill("Loja Teste Ltda");
-  await p.getByPlaceholder("00.000.000/0000-00").fill("11.222.333/0001-81");
+  await p.getByTestId("emitente-resumo").getByText("Empresa ainda não cadastrada.").waitFor();
+  await p.getByLabel("Série da NF-e").or(p.getByPlaceholder("1").first()).first().fill("3");
   await p.getByRole("button", { name: "Salvar configurações" }).click();
-  await p.waitForFunction(async () => (await (await window.__db).query("select razao_social from empresa_fiscal")).rows[0].razao_social === "Loja Teste Ltda");
-  assert.equal((await num(p, "select cnpj from empresa_fiscal")).cnpj, "11.222.333/0001-81");
+  await p.waitForFunction(async () => (await (await window.__db).query("select serie_nfe from empresa_fiscal")).rows[0].serie_nfe === "3");
 });
 
 test("Usuários: criar usuário e papel; e-mail repetido é recusado", async () => {

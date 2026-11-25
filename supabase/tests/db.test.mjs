@@ -364,11 +364,11 @@ test("excluir cliente/fornecedor mantém o histórico (vira nulo); produto com m
 
 test("empresa_fiscal: só quem edita fiscal altera", async () => {
   await como("vend@x.com", async () => {
-    assert.equal((await q("update empresa_fiscal set cnpj = '1' returning id")).length, 0);
+    assert.equal((await q("update empresa_fiscal set provedor = 'x' returning id")).length, 0);
   });
   await como("admin@x.com", async () => {
-    await q("update empresa_fiscal set cnpj = '12.345.678/0001-90', razao_social = 'Loja' where id = 1");
-    assert.equal((await q("select cnpj from empresa_fiscal"))[0].cnpj, "12.345.678/0001-90");
+    await q("update empresa_fiscal set provedor = 'focus_nfe', serie_nfe = '2' where id = 1");
+    assert.equal((await q("select provedor from empresa_fiscal"))[0].provedor, "focus_nfe");
   });
 });
 
@@ -575,16 +575,37 @@ test("importar NF-e grava o vínculo código do fornecedor → produto; a nota s
   });
 });
 
-test("cupom: endereço da empresa e hora da venda; quem vende (sem Fiscal) lê os dados da empresa", async () => {
+test("módulo Empresa: uma linha, admin edita, quem vende lê (cabeçalho do cupom) e ninguém mais altera", async () => {
+  assert.equal((await q("select count(*)::int n from empresa"))[0].n, 1);
+  const pap = Object.fromEntries((await q("select id, permissoes->>'empresa' as n from papeis")).map((r) => [r.id, r.n]));
+  assert.deepEqual({ admin: pap.admin, gerente: pap.gerente, vendedor: pap.vendedor, caixa: pap.caixa }, { admin: "editar", gerente: "visualizar", vendedor: "nenhum", caixa: "nenhum" });
+
   await como("admin@x.com", async () => {
-    await q(`update empresa_fiscal set nome_fantasia = 'Loja X', telefone = '(27) 3333-4455', endereco = '{"logradouro":"Rua A","numero":"1"}'::jsonb`);
+    await q(`update empresa set nome_fantasia = 'Loja X', razao_social = 'Loja X Ltda', cnpj = '11.222.333/0001-81', telefone = '(27) 3333-4455',
+      endereco = '{"logradouro":"Rua A","numero":"1"}'::jsonb, mensagem_cupom = 'Volte sempre!' where id = 1`);
+    await erro(q("update empresa set cnpj = '123' where id = 1"), "empresa_cnpj_tamanho");
+    await q("update empresa set cnpj = '' where id = 1"); // vazio é permitido (ainda não cadastrado)
+    await q("update empresa set cnpj = '11.222.333/0001-81' where id = 1");
+    await erro(q("insert into empresa (id) values (2)"), "permission denied");
+    await erro(q("delete from empresa"), "permission denied");
   });
   await como("vend@x.com", async () => {
-    const e = (await q("select nome_fantasia, telefone, endereco->>'logradouro' as rua from empresa_fiscal"))[0];
-    assert.deepEqual(e, { nome_fantasia: "Loja X", telefone: "(27) 3333-4455", rua: "Rua A" }, "vendedor precisa do cabeçalho do cupom");
-    await q("update empresa_fiscal set telefone = 'x'"); // RLS: não altera nenhuma linha
-    assert.equal((await q("select telefone from empresa_fiscal"))[0].telefone, "(27) 3333-4455", "vendedor não edita a empresa");
+    const e = (await q("select nome_fantasia, telefone, endereco->>'logradouro' as rua, mensagem_cupom from empresa"))[0];
+    assert.deepEqual(e, { nome_fantasia: "Loja X", telefone: "(27) 3333-4455", rua: "Rua A", mensagem_cupom: "Volte sempre!" }, "vendedor precisa do cabeçalho do cupom");
+    assert.equal((await q("update empresa set telefone = 'x' returning id")).length, 0, "vendedor não edita a empresa");
   });
+  await como("leitor@x.com", async () => {
+    assert.equal((await q("update empresa set telefone = 'y' returning id")).length, 0, "só visualizar não altera");
+  });
+  await como("anon@x.com", async () => {
+    assert.equal((await q("select count(*)::int n from empresa"))[0].n, 0, "usuário sem acesso ativo não lê");
+  });
+  const aud = await q("select operacao, depois->>'nome_fantasia' as nome from auditoria where tabela = 'empresa' and operacao = 'UPDATE' order by id limit 1");
+  assert.equal(aud.length, 1, "alteração da empresa fica na auditoria");
+  assert.equal((await q("select count(*)::int n from pg_policies where tablename = 'empresa' and cmd in ('INSERT','DELETE')"))[0].n, 0);
+});
+
+test("cupom: hora da venda (vendas antigas ficam sem hora)", async () => {
   await como("admin@x.com", async () => {
     const id = (await q("select public.finalizar_venda(null, 'pix', '[{\"produto_id\": 2, \"quantidade\": 1}]'::jsonb) as id"))[0].id;
     const v = (await q("select criada_em is not null as tem_hora, abs(extract(epoch from (now() - criada_em))) < 60 as agora from vendas where id = $1", [id]))[0];

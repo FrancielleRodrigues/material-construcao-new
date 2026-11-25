@@ -51,7 +51,8 @@ export function CupomPapel({ venda, cliente, empresa, produtosPorId, operador, n
         {empresa?.razaoSocial && empresa.nomeFantasia && <p className="uppercase">{empresa.razaoSocial}</p>}
         <p>{empresa?.cnpj ? `CNPJ: ${mascararCnpj(empresa.cnpj)}` : "CNPJ não informado (Fiscal → dados do emitente)"}</p>
         {endereco && <p>{endereco}</p>}
-        {empresa?.telefone && <p>Tel.: {empresa.telefone}</p>}
+        {(empresa?.telefone || empresa?.email) && <p>{[empresa.telefone && `Tel.: ${empresa.telefone}`, empresa.email].filter(Boolean).join(" · ")}</p>}
+        {empresa?.site && <p>{empresa.site}</p>}
       </div>
 
       <Linha />
@@ -112,6 +113,7 @@ export function CupomPapel({ venda, cliente, empresa, produtosPorId, operador, n
         QR Code e protocolo de autorização só existem na nota fiscal emitida pela SEFAZ. Este comprovante NÃO substitui a nota fiscal.
       </p>
       <p className="mt-2 break-words">Venda: {venda.numero}{operador ? ` · Operador: ${operador}` : ""}</p>
+      {empresa?.mensagemCupom && <p className="mt-2 text-center font-bold break-words" data-testid="cupom-mensagem">{empresa.mensagemCupom}</p>}
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { Paginacao } from "../../components/Paginacao";
 export function FiscalView({
   clientesPorId,
   empresaFiscal,
+  emitente,
+  irParaEmpresa,
   gerarRascunhoNota,
   integracaoConfigurada,
   notasComVenda,
@@ -125,7 +127,7 @@ export function FiscalView({
         )}
 
         {subFiscal === "config" && (
-          <ConfigFiscalForm inicial={empresaFiscal} onSalvar={salvarConfigFiscal} />
+          <ConfigFiscalForm inicial={empresaFiscal} emitente={emitente} irParaEmpresa={irParaEmpresa} onSalvar={salvarConfigFiscal} />
         )}
       </div>
     </>
