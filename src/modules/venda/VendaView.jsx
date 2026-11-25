@@ -7,6 +7,7 @@ import { inputClasses } from "../../components/ui/inputClasses";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FORMAS_PAGAMENTO } from "../../data/constantes";
 import { LeitorCodigo } from "../../components/LeitorCodigo";
+import { useCelular } from "../../hooks/useCelular";
 
 export function VendaView({
   adicionarAoCarrinho,
@@ -55,6 +56,7 @@ export function VendaView({
   valorDesconto,
 }) {
   const [cameraAberta, setCameraAberta] = useState(false);
+  const celular = useCelular();
   return (
     <>
       {etapaVenda === "inicio" && (
@@ -151,7 +153,7 @@ export function VendaView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
-              <p className="text-xs font-semibold text-teal-800 mb-3">1. Produtos <span className="text-stone-400 font-normal normal-case">— bipe, leia pela câmera ou digite o código de barras ou SKU, o estoque é validado automaticamente</span></p>
+              <p className="text-xs font-semibold text-teal-800 mb-3">1. Produtos <span className="text-stone-400 font-normal normal-case">— bipe com o leitor (ou use a câmera, no celular) ou digite o código de barras ou SKU, o estoque é validado automaticamente</span></p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div style={{ position: "relative" }} className="flex-1">
                   <ScanLine size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} className="text-stone-400" />
@@ -179,15 +181,17 @@ export function VendaView({
                   >
                     <Plus size={16} /> Adicionar
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setCameraAberta(true)}
-                    className="shrink-0 flex items-center justify-center gap-1.5 border border-teal-800 text-teal-800 hover:bg-teal-50 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
-                    aria-label="Ler código com a câmera"
-                    title="Escanear o código de barras com a câmera do celular"
-                  >
-                    <ScanBarcode size={16} /> Escanear
-                  </button>
+                  {celular && (
+                    <button
+                      type="button"
+                      onClick={() => setCameraAberta(true)}
+                      className="shrink-0 flex items-center justify-center gap-1.5 border border-teal-800 text-teal-800 hover:bg-teal-50 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                      aria-label="Ler código com a câmera"
+                      title="Escanear o código de barras com a câmera do celular"
+                    >
+                      <ScanBarcode size={16} /> Escanear
+                    </button>
+                  )}
                 </div>
               </div>
               {erroBip && (
@@ -442,7 +446,7 @@ export function VendaView({
           </div>
         </div>
       )}
-      {cameraAberta && (
+      {celular && cameraAberta && (
         <LeitorCodigo
           continuo
           titulo="Ler produtos pela câmera"

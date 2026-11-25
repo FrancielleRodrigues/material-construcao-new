@@ -9,7 +9,7 @@ import { iniciar, entrar, sql } from "./ajuda.mjs";
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 let app;
 before(async () => {
-  app = await iniciar({ porta: 5197, camera: path.join(aqui, "fixtures/ean-7891000100011.mjpeg") });
+  app = await iniciar({ porta: 5197, camera: path.join(aqui, "fixtures/ean-7891000100011.mjpeg"), toque: true });
 });
 after(async () => {
   await app.encerrar();
