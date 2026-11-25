@@ -7,7 +7,7 @@ export function TelaAviso({ titulo, subtitulo, children }) {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-6 justify-center">
           <div className="w-9 h-9 rounded-lg bg-teal-700 text-white flex items-center justify-center">
-            <ArvoreCedro size={22} />
+            <ArvoreCedro size={28} />
           </div>
           <span className="font-semibold text-stone-800 text-lg">Cedro</span>
         </div>

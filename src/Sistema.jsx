@@ -625,7 +625,7 @@ export default function Sistema({ userId, email, onSair }) {
         <div className="flex items-center justify-between gap-2 px-5 py-5 border-b border-stone-800">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-teal-800 flex items-center justify-center">
-              <ArvoreCedro size={20} className="text-teal-200" />
+              <ArvoreCedro size={26} className="text-teal-200" />
             </div>
             <span className="text-white font-semibold text-sm tracking-tight">Cedro</span>
           </div>
