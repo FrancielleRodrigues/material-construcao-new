@@ -3,6 +3,5 @@
 import { writeFileSync } from "node:fs";
 import { svgDaArvore } from "../src/components/arvoreCedroDados.js";
 
-// favicon é pequeno: folhas cheias e sem nervura
-writeFileSync(new URL("../public/favicon.svg", import.meta.url), svgDaArvore({ cor: "#99f6e4", fundo: "#115e59", nervuras: false, cheia: true }) + "\n");
+writeFileSync(new URL("../public/favicon.svg", import.meta.url), svgDaArvore({ cor: "#99f6e4", fundo: "#115e59" }) + "\n");
 console.log("public/favicon.svg atualizado");

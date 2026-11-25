@@ -1,5 +1,5 @@
 // Desenho da árvore da marca Cedro (viewBox 64x64): tronco que se abre em galhos curvos, folhas
-// pontudas com nervura e algumas frutinhas. É a fonte única do desenho: o componente ArvoreCedro
+// pontudas e três bolinhas. É a fonte única do desenho: o componente ArvoreCedro
 // e o favicon (scripts/gerar-favicon.mjs → public/favicon.svg) usam estes dados.
 
 // Tronco e galhos (formas cheias, afinando até a ponta; todas entram no tronco para não ficar vão).
@@ -12,48 +12,41 @@ export const TRONCO = [
 ];
 
 // Folhas: origem (x, y), ângulo em graus (0 = aponta para a direita) e comprimento.
+// Medidas tiradas do modelo desenhado pela usuária (sem nervuras).
 export const FOLHAS = [
-  { x: 32, y: 19, a: -90, c: 14 },
-  { x: 25, y: 22, a: -112, c: 11.5 },
-  { x: 39, y: 22, a: -68, c: 11.5 },
-  { x: 13, y: 22.5, a: -152, c: 12.5 },
-  { x: 51, y: 22.5, a: -28, c: 12.5 },
-  { x: 17, y: 31, a: 188, c: 12 },
-  { x: 47, y: 31, a: -8, c: 12 },
-  { x: 14, y: 40, a: 148, c: 11.5 },
-  { x: 50, y: 40, a: 32, c: 11.5 },
+  { x: 32, y: 18.7, a: -90, c: 14 },
+  { x: 25.4, y: 21.5, a: -114.5, c: 11.3 },
+  { x: 38.8, y: 21.5, a: -66.4, c: 11.2 },
+  { x: 12.8, y: 22.5, a: -148.8, c: 12.2 },
+  { x: 51, y: 22.5, a: -32, c: 11.8 },
+  { x: 9.5, y: 29.6, a: 184, c: 8.6 },
+  { x: 55.2, y: 30.4, a: -24, c: 9 },
+  { x: 14, y: 40.2, a: 146.6, c: 11.3 },
+  { x: 50, y: 40.2, a: 33, c: 11.4 },
 ];
 
-// Frutinhas: ficam soltas no vão aberto entre os dois galhos, sem tocar em galho nem folha
-// (nada é cortado em volta delas).
+// Bolinhas: uma no centro, acima do encontro dos galhos, e uma de cada lado, entre as folhas e o galho.
+// Ficam soltas (não encostam em galho nem folha) e nada é cortado em volta delas.
 export const FRUTOS = [
-  { x: 32, y: 25.3, r: 2.9 },
-  { x: 27.4, y: 29.6, r: 2.1 },
-  { x: 36.6, y: 29.6, r: 2.1 },
+  { x: 32, y: 26.6, r: 3.9 },
+  { x: 14.4, y: 30.5, r: 3.7 },
+  { x: 49.6, y: 30.5, r: 3.7 },
 ];
 
-// Folha em coordenadas locais (aponta para +x): amêndoa fina com a ponta em (c, 0).
-// `cheia` engrossa a folha para os tamanhos pequenos, onde a fina some.
+// Folha em coordenadas locais (aponta para +x): ponta em (c, 0) e barriga cheia perto da base,
+// como no modelo. `cheia` engrossa a folha nos tamanhos muito pequenos (menu), onde a fina some.
 export const caminhoFolha = (c, cheia = false) => {
-  const k = cheia ? 0.64 : 0.46;
-  return `M0 0 Q${c * 0.5} ${-c * k} ${c} 0 Q${c * 0.5} ${c * k} 0 0 Z`;
+  const k = cheia ? 0.4 : 0.31;
+  return `M0 0 C${c * 0.3} ${-c * k} ${c * 0.66} ${-c * k} ${c} 0 C${c * 0.66} ${c * k} ${c * 0.3} ${c * k} 0 0 Z`;
 };
 
 // Mesmo desenho como texto SVG (favicon e prévias).
-export function svgDaArvore({ cor = "#99f6e4", fundo = null, nervuras = true, cheia = !nervuras } = {}) {
-  const folhas = FOLHAS.map((f) => `<g transform="translate(${f.x} ${f.y}) rotate(${f.a})"><path d="${caminhoFolha(f.c, cheia)}"/></g>`).join("");
-  const veias = nervuras
-    ? FOLHAS.map((f) => `<g transform="translate(${f.x} ${f.y}) rotate(${f.a})"><path d="M${f.c * 0.14} 0 L${f.c * 0.86} 0" stroke="black" stroke-width="0.9" stroke-linecap="round"/></g>`).join("")
-    : "";
+export function svgDaArvore({ cor = "#99f6e4", fundo = null, cheia = false } = {}) {
+  const folhas = FOLHAS.map((f) => `<path d="${caminhoFolha(f.c, cheia)}" transform="translate(${f.x} ${f.y}) rotate(${f.a})"/>`).join("");
   const frutos = FRUTOS.map((f) => `<circle cx="${f.x}" cy="${f.y}" r="${f.r}"/>`).join("");
   const tronco = TRONCO.map((d) => `<path d="${d}"/>`).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   ${fundo ? `<rect width="64" height="64" rx="14" fill="${fundo}"/>` : ""}
-  <defs><mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
-    <rect width="64" height="64" fill="black"/>
-    <g fill="white">${tronco}${folhas}${frutos}</g>
-    <g fill="none">${veias}</g>
-  </mask></defs>
-  <rect width="64" height="64" fill="${cor}" mask="url(#m)"/>
+  <g fill="${cor}">${tronco}${folhas}${frutos}</g>
 </svg>`;
 }
