@@ -82,6 +82,7 @@ export default function Sistema({ userId, email, onSair }) {
   const [tipoEntregaVenda, setTipoEntregaVenda] = useState("retirada");
   const [enderecoEntregaVenda, setEnderecoEntregaVenda] = useState("");
   const [dataEntregaVenda, setDataEntregaVenda] = useState(hojeISO());
+  const [contatoEntrega, setContatoEntrega] = useState({ nome: "", telefone: "", referencia: "" });
   const [cepVenda, setCepVenda] = useState("");
   const [numeroVenda, setNumeroVenda] = useState("");
   const [statusCepVenda, setStatusCepVenda] = useState("idle");
@@ -494,6 +495,9 @@ export default function Sistema({ userId, email, onSair }) {
         enderecoEntrega: enderecoEntregaVenda,
         dataEntrega: dataEntregaVenda,
         gerarNota: gerarNotaVenda,
+        contatoNome: contatoEntrega.nome,
+        contatoTelefone: contatoEntrega.telefone,
+        pontoReferencia: contatoEntrega.referencia,
       }),
       ["produtos", "movimentacoes", "lancamentos", "vendas", "entregas", "notasFiscais", "empresaFiscal", "empresa"]
     );
@@ -506,6 +510,7 @@ export default function Sistema({ userId, email, onSair }) {
     setDescontoValor("");
     setTipoEntregaVenda("retirada");
     setEnderecoEntregaVenda("");
+    setContatoEntrega({ nome: "", telefone: "", referencia: "" });
     setDataEntregaVenda(hojeISO());
     setGerarNotaVenda(true);
     setEtapaVenda("inicio");
@@ -974,6 +979,8 @@ export default function Sistema({ userId, email, onSair }) {
               descontoValor={descontoValor}
               digitosDocVenda={digitosDocVenda}
               docClienteVenda={docClienteVenda}
+              contatoEntrega={contatoEntrega}
+              setContatoEntrega={setContatoEntrega}
               enderecoEntregaVenda={enderecoEntregaVenda}
               erroBip={erroBip}
               etapaVenda={etapaVenda}

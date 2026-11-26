@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ScanLine, ScanBarcode, Plus, Search, CheckCircle2, X, ShoppingCart, Minus, Trash2, Loader2, Receipt } from "lucide-react";
 import { Campo } from "../../components/ui/Campo";
 import { cn, moeda, formatarEnderecoEntrega } from "../../utils/format";
-import { mascararDocumento } from "../../utils/mascaras";
+import { mascararDocumento, mascararTelefone, soDigitos } from "../../utils/mascaras";
 import { inputClasses } from "../../components/ui/inputClasses";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FORMAS_PAGAMENTO } from "../../data/constantes";
@@ -24,6 +24,8 @@ export function VendaView({
   descontoValor,
   digitosDocVenda,
   docClienteVenda,
+  contatoEntrega,
+  setContatoEntrega,
   enderecoEntregaVenda,
   erroBip,
   etapaVenda,
@@ -326,6 +328,9 @@ export function VendaView({
                     if (!enderecoEntregaVenda && clienteVendaEncontrado) {
                       setEnderecoEntregaVenda(formatarEnderecoEntrega(clienteVendaEncontrado.endereco));
                     }
+                    if (clienteVendaEncontrado && !contatoEntrega.nome && !contatoEntrega.telefone) {
+                      setContatoEntrega((c) => ({ ...c, nome: clienteVendaEncontrado.nome, telefone: mascararTelefone(clienteVendaEncontrado.telefone) }));
+                    }
                   }}
                   className={cn(
                     "flex-1 py-2 rounded-md text-sm font-medium transition-colors",
@@ -374,6 +379,39 @@ export function VendaView({
                       placeholder="Rua, número - Bairro, Cidade/UF"
                     />
                   </Campo>
+                  <Campo label="Ponto de referência (opcional)">
+                    <input
+                      value={contatoEntrega.referencia}
+                      onChange={(e) => setContatoEntrega({ ...contatoEntrega, referencia: e.target.value })}
+                      className={inputClasses}
+                      placeholder="Ex: ao lado da padaria, portão azul"
+                      maxLength={200}
+                    />
+                  </Campo>
+                  <Campo label={clienteVendaEncontrado ? "Quem recebe (opcional)" : "Nome de quem recebe"}>
+                    <input
+                      value={contatoEntrega.nome}
+                      onChange={(e) => setContatoEntrega({ ...contatoEntrega, nome: e.target.value })}
+                      className={inputClasses}
+                      placeholder="Nome completo"
+                      maxLength={120}
+                      autoComplete="off"
+                    />
+                  </Campo>
+                  <Campo label={clienteVendaEncontrado ? "Telefone de quem recebe (opcional)" : "Telefone de quem recebe"}>
+                    <input
+                      value={contatoEntrega.telefone}
+                      onChange={(e) => setContatoEntrega({ ...contatoEntrega, telefone: mascararTelefone(e.target.value) })}
+                      className={inputClasses}
+                      placeholder="(00) 00000-0000"
+                      inputMode="tel"
+                      maxLength={15}
+                      autoComplete="off"
+                    />
+                  </Campo>
+                  {!clienteVendaEncontrado && (
+                    <p className="text-xs text-stone-400 -mt-1">Cliente sem cadastro: o nome e o telefone (com DDD) são obrigatórios para o motorista conseguir avisar.</p>
+                  )}
                   <Campo label="Data prevista">
                     <input
                       type="date"
@@ -438,7 +476,7 @@ export function VendaView({
   
             <button
               onClick={finalizarVenda}
-              disabled={carrinho.length === 0 || (tipoEntregaVenda === "entrega" && !enderecoEntregaVenda.trim())}
+              disabled={carrinho.length === 0 || (tipoEntregaVenda === "entrega" && (!enderecoEntregaVenda.trim() || (!clienteVendaEncontrado && (!contatoEntrega.nome.trim() || ![10, 11].includes(soDigitos(contatoEntrega.telefone).length)))))}
               className="w-full flex items-center justify-center gap-1.5 bg-teal-800 hover:bg-teal-900 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
             >
               <Receipt size={16} /> Finalizar venda

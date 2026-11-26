@@ -362,3 +362,26 @@ test("layout de celular: login e dashboard sem erro", async () => {
   const p = await logar("admin@teste.com", 390);
   await p.getByText("Clientes cadastrados").waitFor();
 });
+
+test("PDV: entrega para cliente sem cadastro exige nome e telefone e grava o ponto de referência", async () => {
+  const p = await logar("admin@teste.com");
+  await aba(p, "Venda (PDV)");
+  await p.getByRole("button", { name: /Iniciar venda/ }).click();
+  await p.getByRole("button", { name: "Continuar sem identificar cliente" }).click();
+  await p.getByPlaceholder("Bipe ou digite o código de barras ou SKU").fill("7891000100030");
+  await p.keyboard.press("Enter");
+  await p.getByRole("button", { name: "Entrega", exact: true }).click();
+  await p.getByPlaceholder("Rua, número - Bairro, Cidade/UF").fill("Rua das Flores, 10 - Centro");
+  const finalizar = p.getByRole("button", { name: /Finalizar venda/ });
+  assert.equal(await finalizar.isDisabled(), true, "sem nome e telefone não finaliza");
+  await p.getByPlaceholder("Nome completo").fill("José da Obra");
+  await p.getByPlaceholder("(00) 00000-0000").fill("27999990000");
+  assert.equal(await p.getByPlaceholder("(00) 00000-0000").inputValue(), "(27) 99999-0000");
+  await p.getByPlaceholder("Ex: ao lado da padaria, portão azul").fill("Portão azul");
+  assert.equal(await finalizar.isDisabled(), false);
+  await finalizar.click();
+  await p.waitForFunction(async () => (await (await window.__db).query("select count(*)::int n from entregas where contato_nome = 'José da Obra'")).rows[0].n === 1, null, { timeout: 15000 });
+  assert.deepEqual(await num(p, "select contato_telefone, ponto_referencia, cliente_id from entregas where contato_nome = 'José da Obra'"),
+    { contato_telefone: "27999990000", ponto_referencia: "Portão azul", cliente_id: null });
+  await p.close();
+});

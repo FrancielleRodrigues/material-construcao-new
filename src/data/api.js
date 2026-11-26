@@ -230,6 +230,9 @@ export const finalizarVenda = (v) =>
       p_endereco_entrega: v.enderecoEntrega || "",
       p_data_entrega: v.dataEntrega || null,
       p_gerar_nota: Boolean(v.gerarNota),
+      p_contato_nome: v.contatoNome || "",
+      p_contato_telefone: v.contatoTelefone || "",
+      p_ponto_referencia: v.pontoReferencia || "",
     })
   );
 

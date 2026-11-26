@@ -1,3 +1,4 @@
+import { mascararTelefone } from "../../utils/mascaras";
 import { FileClock, AlertTriangle, PackageCheck, Truck, MapPin, CalendarDays, UserRound, Navigation, Pencil, PackageX } from "lucide-react";
 import { KpiCard } from "../../components/ui/KpiCard";
 import { STATUS_ENTREGA } from "../../data/constantes";
@@ -66,7 +67,7 @@ export function EntregasView({
                   <div key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-medium text-stone-800">{cliente ? cliente.nome : "Cliente não identificado"}</p>
+                        <p className="font-medium text-stone-800">{cliente ? cliente.nome : (e.contatoNome || "Cliente não identificado")}</p>
                         <StatusEntregaChip status={e.status} />
                         {atrasada && (
                           <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">
@@ -77,6 +78,12 @@ export function EntregasView({
                       <p className="text-xs text-stone-500 flex items-start gap-1.5 mb-0.5">
                         <MapPin size={12} className="text-stone-400 shrink-0 mt-0.5" /> {e.endereco || "Endereço não informado"}
                       </p>
+                      {e.pontoReferencia && <p className="text-xs text-stone-500 mb-0.5">Referência: {e.pontoReferencia}</p>}
+                      {(e.contatoNome || e.contatoTelefone) && (
+                        <p className="text-xs text-stone-500 mb-0.5">
+                          Receber com: {[e.contatoNome, e.contatoTelefone && mascararTelefone(e.contatoTelefone)].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                       <p className="text-xs text-stone-400">{e.itensDescricao}</p>
                       <p className="text-xs text-stone-400 mt-0.5 flex items-center gap-3 flex-wrap">
                         <span className="inline-flex items-center gap-1"><CalendarDays size={11} /> {formatarData(e.dataPrevista)}</span>

@@ -279,6 +279,9 @@ test("venda é atômica: estoque insuficiente não deixa rastro", async () => {
     await erro(q(`select finalizar_venda(1, 'pix', '[]'::jsonb)`), "não tem itens");
     await erro(q(`select finalizar_venda(1, 'pix', '[{"produto_id":2,"quantidade":-1}]'::jsonb)`), "inválido");
     await erro(q(`select finalizar_venda(1, 'pix', '[{"produto_id":2,"quantidade":1}]'::jsonb, 'percentual', 0, 'entrega', '  ')`), "endereço");
+    // cliente sem cadastro: entrega exige nome e telefone de quem recebe
+    await erro(q(`select finalizar_venda(null, 'pix', '[{"produto_id":2,"quantidade":1}]'::jsonb, 'percentual', 0, 'entrega', 'Rua A, 1', null, false)`), "nome de quem");
+    await erro(q(`select finalizar_venda(null, 'pix', '[{"produto_id":2,"quantidade":1}]'::jsonb, 'percentual', 0, 'entrega', 'Rua A, 1', null, false, 'João', '123')`), "telefone");
   });
   const depois = await como("admin@x.com", async () => ({
     vendas: (await q("select count(*)::int n from vendas"))[0].n,

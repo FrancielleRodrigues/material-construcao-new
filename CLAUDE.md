@@ -45,7 +45,7 @@ Integrações entre módulos (já implementadas):
 - Cards de indicador compactos (ícone e título pequenos), lado a lado.
 - Confirmação antes de excluir; Esc fecha modais.
 - Campo de fornecedor é **busca por nome**, não dropdown.
-- PDV: fluxo numa tela só — Iniciar venda → identificar cliente por CPF/CNPJ (cadastra na hora se não existir) → produtos (bipar código de barras) → desconto → entrega/retirada → pagamento → documento fiscal. Endereço de entrega com busca por CEP.
+- PDV: fluxo numa tela só — Iniciar venda → identificar cliente por CPF/CNPJ (cadastra na hora se não existir) → produtos (bipar código de barras) → desconto → entrega/retirada → pagamento → documento fiscal. Endereço de entrega com busca por CEP. Na entrega o PDV pede **ponto de referência**, **nome e telefone de quem recebe** (obrigatórios para cliente sem cadastro, conferido também no banco por `finalizar_venda`; para cliente cadastrado vêm preenchidos e são opcionais). Gravados em `entregas.contato_nome/contato_telefone/ponto_referencia` e mostrados na aba Entregas.
 - Responsivo: celular e computador.
 
 ## Armadilhas conhecidas

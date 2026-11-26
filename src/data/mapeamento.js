@@ -69,6 +69,7 @@ export const entregas = {
   de: (r) => ({
     id: r.id, vendaId: r.venda_id, clienteId: r.cliente_id, endereco: r.endereco, itensDescricao: r.itens_descricao,
     dataPrevista: r.data_prevista || "", motorista: r.motorista, veiculo: r.veiculo, status: r.status, observacao: r.observacao,
+    contatoNome: r.contato_nome || "", contatoTelefone: r.contato_telefone || "", pontoReferencia: r.ponto_referencia || "",
   }),
   para: (e) => ({
     venda_id: numeroOuNulo(e.vendaId), cliente_id: numeroOuNulo(e.clienteId), endereco: texto(e.endereco),
